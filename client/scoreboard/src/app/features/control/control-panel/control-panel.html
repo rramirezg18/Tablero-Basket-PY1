@@ -1,0 +1,106 @@
+<div class="cp">
+  <!-- Toolbar superior -->
+  <div class="toolbar">
+    <button class="btn ghost">Help</button>
+    <button class="btn ghost">Options</button>
+    <button class="btn" (click)="newGame()">New Game</button>
+    <button class="btn">Correction</button>
+    <button class="btn">Buzzer</button>
+    <button class="btn ghost">Exit</button>
+  </div>
+
+  <!-- Centro: controles de tiempo -->
+  <div class="time-center">
+    <div class="status" [class.paused]="!rt.timerRunning()" [class.dark]="!rt.timerRunning()">
+      {{ rt.timerRunning() ? 'Running' : 'Paused' }}
+    </div>
+
+    <!-- reloj dinámico -->
+    <div class="clock">{{ clock() }}</div>
+
+    <div class="status dark">Period Time</div>
+
+    <div class="time-actions">
+      <button class="btn go" (click)="start()">Start</button>
+      <button class="btn stop" (click)="stop()">Stop</button>
+      <button class="btn" (click)="timeout(30)">Timeout (0:30)</button>
+      <button class="btn" (click)="timeout(60)">Timeout (1:00)</button>
+      <button class="btn" (click)="reset()">Reset</button>
+      <button class="btn ghost">Show Time of Day</button>
+    </div>
+  </div>
+
+  <!-- Posesión -->
+  <div class="section">
+    <div class="title">POSSESSION</div>
+    <div class="pos">
+      <button class="btn pos-btn" [class.active]="possession() === 'home'" (click)="posLeft()">◄</button>
+      <button class="btn pos-none" (click)="posNone()">
+        {{ possession() === 'none' ? 'None' : (possession() === 'home' ? homeName : awayName) }}
+      </button>
+      <button class="btn pos-btn" [class.active]="possession() === 'away'" (click)="posRight()">►</button>
+    </div>
+  </div>
+
+  <!-- Bonus -->
+  <div class="section">
+    <div class="title">BONUS</div>
+    <div class="bonus">
+      <button class="lamp off" title="home bonus"></button>
+      <button class="lamp on" title="away bonus"></button>
+    </div>
+  </div>
+
+  <!-- Periodo -->
+  <div class="section">
+    <div class="title">PERIOD</div>
+    <div class="period">
+      <button class="btn minus" (click)="periodMinus()">-1</button>
+      <div class="period-box">
+        <span class="num">{{ period() }}</span>
+      </div>
+      <button class="btn plus" (click)="periodPlus()">+1</button>
+    </div>
+  </div>
+
+  <!-- Equipos -->
+  <div class="teams">
+    <!-- HOME -->
+    <div class="team">
+      <div class="name">{{ homeName }}</div>
+      <div class="sub">SCORE</div>
+
+      <!-- Fila principal: -1 | [ SCORE ] | +1 -->
+      <div class="score-row">
+        <button class="btn neg" [disabled]="!homeTeamId || !canScore()" (click)="minus1(homeTeamId)">-1</button>
+        <div class="score-display">{{ homeScore() }}</div>
+        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,1)">+1</button>
+      </div>
+
+      <!-- Fila inferior compacta: +3 | +2 -->
+      <div class="score-actions">
+        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,3)">+3</button>
+        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,2)">+2</button>
+      </div>
+    </div>
+
+    <!-- AWAY -->
+    <div class="team">
+      <div class="name">{{ awayName }}</div>
+      <div class="sub">SCORE</div>
+
+      <div class="score-row">
+        <button class="btn neg" [disabled]="!awayTeamId || !canScore()" (click)="minus1(awayTeamId)">-1</button>
+        <div class="score-display">{{ awayScore() }}</div>
+        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,1)">+1</button>
+      </div>
+
+      <div class="score-actions">
+        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,3)">+3</button>
+        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,2)">+2</button>
+      </div>
+    </div>
+  </div>
+
+  <a class="link" [routerLink]="['/score', matchId()]">Mostrar Scoreboard</a>
+</div>

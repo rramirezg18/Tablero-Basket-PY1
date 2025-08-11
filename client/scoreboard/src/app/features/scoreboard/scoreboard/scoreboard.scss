@@ -1,0 +1,101 @@
+/* ====== Paleta y base ====== */
+:root {
+  --bg: #0b0b0b;
+  --bezel: #ffffff;
+  --led-yellow: #ffd54a;
+  --led-green: #46ff6b;
+  --led-red: #ff4d4d;
+  --dot: 7px; /* tamaño del “punto” LED */
+}
+.board {
+  min-height: 100vh;
+  background: var(--bg);
+  color: #fff;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 24px;
+}
+
+/* ====== TOP ====== */
+.top {
+  display: grid;
+  grid-template-columns: 1fr minmax(420px, 820px) 1fr;
+  align-items: center;
+  gap: 24px;
+}
+.fouls {
+  justify-self: start;
+  &.right { justify-self: end; }
+}
+
+/* Bezel (marco blanco) del timer */
+.timer-wrap {
+  display: grid;
+  place-items: center;
+}
+.timer-bezel {
+  width: min(95vw, 920px);
+  border: 10px solid var(--bezel);
+  border-radius: 24px;
+  padding: 8px 16px;
+  box-shadow: 0 0 0 4px #000 inset;
+  background: #111;
+}
+
+/* ====== MIDDLE ====== */
+.middle {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr minmax(260px, 360px) 1fr;
+  align-items: center;
+  gap: 24px;
+}
+
+.score-box {
+  border: 6px solid #ddd;
+  border-radius: 8px;
+  padding: clamp(8px, 1.5vw, 16px);
+  background: #111;
+}
+
+/* Centro: POS + PERIOD */
+.center {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+.pos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  .pos-text {
+    font: 800 clamp(22px, 3vw, 34px)/1 "Impact", system-ui, sans-serif;
+    letter-spacing: 0.02em;
+  }
+  .arrow {
+    font-size: clamp(22px, 3.2vw, 36px);
+    color: #e33;
+    &.active { filter: drop-shadow(0 0 6px #e33); }
+  }
+}
+
+/* ====== Utilidad: efecto LED punteado ====== */
+.led {
+  --glow: currentColor;
+  color: transparent;
+  background:
+    radial-gradient(circle, currentColor 64%, transparent 66%) 0 0 / var(--dot) var(--dot);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 0 calc(var(--dot) / 1.4) var(--glow);
+}
+.led-yellow { color: var(--led-yellow); --glow: #ffd54a; }
+.led-green  { color: var(--led-green);  --glow: #46ff6b; }
+.led-red    { color: var(--led-red);    --glow: #ff4d4d; }
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  .top { grid-template-columns: 1fr; gap: 12px; }
+  .fouls { justify-self: center; }
+  .middle { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,19 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+# Editor/OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Dotnet
+bin/
+obj/
+*.user
+*.suo
+
+# Build outputs opcionales
+wwwroot/
+# Logs
+*.log
