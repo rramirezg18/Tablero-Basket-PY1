@@ -24,6 +24,17 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         if (m is null) return NotFound();
 
+        var ts = await db.TimerStates.SingleOrDefaultAsync(t => t.MatchId == id);
+        int remaining = 0; bool running = false; DateTime? endsAt = null;
+        if (ts is not null)
+        {
+            running = ts.IsRunning;
+            remaining = ts.IsRunning && ts.QuarterEndsAtUtc is not null
+                ? Math.Max(0, (int)Math.Ceiling((ts.QuarterEndsAtUtc.Value - DateTime.UtcNow).TotalSeconds))
+                : ts.RemainingSeconds;
+            endsAt = ts.QuarterEndsAtUtc;
+        }
+
         return Ok(new
         {
             id = m.Id,
@@ -33,11 +44,12 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             awayTeam = m.AwayTeam.Name,
             homeScore = m.HomeScore,
             awayScore = m.AwayScore,
-            quarter = m.CurrentQuarter,
             status = m.Status,
-            quarterDurationSeconds = m.QuarterDurationSeconds
+            quarterDurationSeconds = m.QuarterDurationSeconds,
+            timer = new { running, remainingSeconds = remaining, quarterEndsAtUtc = endsAt }
         });
     }
+
 
     // ===========================
     // NEW GAME
@@ -60,7 +72,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,
             Status = "Scheduled",
-            CurrentQuarter = 1,
+            //CurrentQuarter = 1,
             QuarterDurationSeconds = dto.QuarterDurationSeconds is > 0 ? dto.QuarterDurationSeconds!.Value : 600,
             HomeScore = 0,
             AwayScore = 0,
@@ -239,9 +251,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        m.CurrentQuarter += 1;
-
-        // al cambiar de periodo, detén y resetea el timer
+        // al “cambiar de periodo” solo detenemos y reseteamos el timer
         var ts = await db.TimerStates.SingleOrDefaultAsync(t => t.MatchId == id);
         if (ts is not null)
         {
@@ -249,11 +259,9 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             ts.RemainingSeconds = 0;
             ts.QuarterEndsAtUtc = null;
             ts.LastChangedUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync();
         }
 
-        await db.SaveChangesAsync();
-
-        // (opcional) podrías emitir un evento SignalR "quarterChanged"
-        return Ok(new { quarter = m.CurrentQuarter });
+        return NoContent(); // 204
     }
 }

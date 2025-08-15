@@ -39,14 +39,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Match>()
             .Property(m => m.Status).HasMaxLength(16);
 
-        // Quarter
+        // Quarter  (sin Match.Quarters)
         b.Entity<Quarter>()
-            .HasOne(q => q.Match).WithMany(m => m.Quarters)
+            .HasOne(q => q.Match).WithMany()                 // <— antes: WithMany(m => m.Quarters)
             .HasForeignKey(q => q.MatchId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<Quarter>()
             .HasIndex(q => new { q.MatchId, q.Number }).IsUnique();
 
-        // ScoreEvent
+        // ScoreEvent (Match tiene ScoreEvents; si no, cambia a WithMany())
         b.Entity<ScoreEvent>()
             .HasOne(se => se.Match).WithMany(m => m.ScoreEvents)
             .HasForeignKey(se => se.MatchId).OnDelete(DeleteBehavior.Cascade);
@@ -61,9 +61,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.CreatedUtc);
 
-        // Foul
+        // Foul  (sin Match.Fouls)
         b.Entity<Foul>()
-            .HasOne(f => f.Match).WithMany(m => m.Fouls)
+            .HasOne(f => f.Match).WithMany()                 // <— antes: WithMany(m => m.Fouls)
             .HasForeignKey(f => f.MatchId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<Foul>()
             .HasOne(f => f.Team).WithMany()
@@ -74,10 +74,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Foul>()
             .HasIndex(f => new { f.MatchId, f.TeamId });
 
-        // TimerState
+        // TimerState 1–1 (sin Match.TimerState)
         b.Entity<TimerState>()
-            .HasOne(ts => ts.Match).WithOne(m => m.TimerState!)
-            .HasForeignKey<TimerState>(ts => ts.MatchId).OnDelete(DeleteBehavior.Cascade);
+            .HasOne(ts => ts.Match).WithOne()               // <— antes: WithOne(m => m.TimerState!)
+            .HasForeignKey<TimerState>(ts => ts.MatchId)
+            .OnDelete(DeleteBehavior.Cascade);
         b.Entity<TimerState>()
             .HasIndex(ts => ts.MatchId).IsUnique();
 

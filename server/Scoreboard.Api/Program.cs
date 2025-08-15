@@ -71,7 +71,7 @@ using (var scope = app.Services.CreateScope())
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,
             Status = "Live",
-            CurrentQuarter = 1,
+            //CurrentQuarter = 1,
             QuarterDurationSeconds = 600
         });
         await db.SaveChangesAsync();

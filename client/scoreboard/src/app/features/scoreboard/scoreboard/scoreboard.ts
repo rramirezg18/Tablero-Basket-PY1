@@ -34,6 +34,7 @@ awayName = 'B TEAM';
         this.realtime.score.set({ home: m.homeScore, away: m.awayScore });
         this.homeName = m.homeTeam || 'A TEAM';
         this.awayName = m.awayTeam || 'B TEAM';
+        this.realtime.hydrateTimerFromSnapshot(m.timer);
       }
     });
     if (isPlatformBrowser(this.platformId)) {

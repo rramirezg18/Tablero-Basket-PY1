@@ -75,7 +75,8 @@ export class ControlPanelComponent implements OnDestroy {
           this.awayTeamId = m.awayTeamId;
           this.homeName = m.homeTeam ?? 'HOME';
           this.awayName = m.awayTeam ?? 'AWAY';
-          this.period.set(m.quarter ?? 1);
+          //this.period.set(m.quarter ?? 1);
+          this.period.set(1);
           this.homeScore.set(m.homeScore ?? 0);
           this.awayScore.set(m.awayScore ?? 0);
         },
@@ -155,8 +156,8 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   // periodo
-  periodMinus() { this.period.update(p => Math.max(1, p - 1)); /* si quieres persistirlo, añade endpoint */ }
-  periodPlus()  { this.api.advanceQuarter(this.matchId()).subscribe(); this.period.update(p => p + 1); }
+  periodMinus() { this.period.update(p => Math.max(1, p - 1)); }
+  periodPlus()  { this.period.update(p => p + 1); }
 
   // posesión (visual local)
   posLeft()  { this.possession.set('home'); }
