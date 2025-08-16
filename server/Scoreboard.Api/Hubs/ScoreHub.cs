@@ -6,9 +6,13 @@ public class ScoreHub : Hub
 {
     public override async Task OnConnectedAsync()
     {
-        var matchIdStr = Context.GetHttpContext()?.Request.Query["matchId"];
-        if (int.TryParse(matchIdStr, out var matchId))
+        var http = Context.GetHttpContext();
+        var matchId = http?.Request.Query["matchId"].ToString();
+        if (!string.IsNullOrEmpty(matchId))
+        {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"match-{matchId}");
+        }
         await base.OnConnectedAsync();
     }
+
 }

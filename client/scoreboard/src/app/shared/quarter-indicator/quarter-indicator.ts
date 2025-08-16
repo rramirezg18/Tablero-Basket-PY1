@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { RealtimeService } from '../../core/realtime';
 
 @Component({
   selector: 'app-quarter-indicator',
@@ -6,4 +7,8 @@ import { Component } from '@angular/core';
   templateUrl: './quarter-indicator.html',
   styleUrls: ['./quarter-indicator.scss']
 })
-export class QuarterIndicatorComponent {}
+export class QuarterIndicatorComponent {
+  private rt = inject(RealtimeService);
+  quarter = computed(() => this.rt.quarter());
+}
+

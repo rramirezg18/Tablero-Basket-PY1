@@ -26,10 +26,18 @@ export class ApiService {
   resumeTimer(id: number) { return this.http.post(`${this.base}/matches/${id}/timer/resume`, {}); }
   resetTimer(id: number)  { return this.http.post(`${this.base}/matches/${id}/timer/reset`, {}); }
 
-  advanceQuarter(id: number) { return this.http.post(`${this.base}/matches/${id}/quarters/advance`, {}); }
+  // Avance manual del cuarto
+  advanceQuarter(id: number) {
+    return this.http.post(`${this.base}/matches/${id}/quarters/advance`, {});
+  }
+
+  // ⬅️ NUEVO: Avance automático (cuando el reloj llega a 0)
+  autoAdvanceQuarter(id: number) {
+    return this.http.post(`${this.base}/matches/${id}/quarters/auto-advance`, {});
+  }
 
   newGame(body: { homeName: string; awayName: string; quarterDurationSeconds?: number }) {
-  return this.http.post<any>(`${this.base}/matches/new`, body);
-}
+    return this.http.post<any>(`${this.base}/matches/new`, body);
+  }
 }
 
