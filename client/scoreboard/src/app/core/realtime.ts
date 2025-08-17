@@ -6,26 +6,25 @@ export class RealtimeService {
   private hub?: signalR.HubConnection;
   private tick?: any;
 
-  // Evitar conectar en SSR
   private readonly isBrowser =
     typeof window !== 'undefined' && typeof document !== 'undefined';
 
-  // ==== estado público ====
+  // ===== estado público =====
   score = signal<{ home: number; away: number }>({ home: 0, away: 0 });
-  timeLeft = signal(0);                 // segundos del cuarto
+  timeLeft = signal(0);
   timerRunning = signal(false);
-  quarter = signal(1);                  // cuarto actual (1..4)
+  quarter = signal(1);
 
-  // Fin de partido: null mientras no haya terminado
+  // 👇 NUEVO: faltas
+  fouls = signal<{ home: number; away: number }>({ home: 0, away: 0 });
+
   gameOver = signal<{ home: number; away: number; winner: 'home'|'away'|'draw' } | null>(null);
 
-  // ==== reloj interno ====
-  private endsAt?: number;              // epoch en ms para terminar el cuarto
+  // ===== reloj interno =====
+  private endsAt?: number;
 
-  // ==== audio ====
+  // ===== audio =====
   private audioCtx?: AudioContext;
-
-  // Método público para “buzzer” desde UI
   public beep() { this.playBuzzer(); }
 
   private playBuzzer() {
@@ -40,9 +39,7 @@ export class RealtimeService {
       osc.connect(gain); gain.connect(this.audioCtx.destination);
       osc.start();
       osc.stop(this.audioCtx.currentTime + 0.35);
-    } catch {
-      /* ignorar si el navegador bloquea audio sin interacción previa */
-    }
+    } catch { /* ignore */ }
   }
 
   private startTick() {
@@ -58,17 +55,10 @@ export class RealtimeService {
       }
     }, 200);
   }
-  private stopTick() {
-    if (this.tick) { clearInterval(this.tick); this.tick = undefined; }
-  }
+  private stopTick() { if (this.tick) { clearInterval(this.tick); this.tick = undefined; } }
 
-  // Hidrata desde GET /api/matches/:id (usa remainingSeconds para evitar TZ)
-  hydrateTimerFromSnapshot(snap?: {
-    running: boolean;
-    remainingSeconds: number;
-    quarterEndsAtUtc?: string | null;
-    quarter?: number;
-  }) {
+  // ===== hidratar desde GET /matches/:id =====
+  hydrateTimerFromSnapshot(snap?: { running: boolean; remainingSeconds: number; quarterEndsAtUtc?: string | null; quarter?: number; }) {
     if (!snap) return;
     if (typeof snap.quarter === 'number') this.quarter.set(snap.quarter);
 
@@ -86,6 +76,12 @@ export class RealtimeService {
     }
   }
 
+  // 👇 NUEVO: hidratar faltas
+  hydrateFoulsFromSnapshot(snap?: { home: number; away: number }) {
+    if (!snap) return;
+    this.fouls.set({ home: snap.home ?? 0, away: snap.away ?? 0 });
+  }
+
   async connect(matchId: number) {
     if (!this.isBrowser) return;
     if (this.hub) return;
@@ -95,12 +91,12 @@ export class RealtimeService {
       .withAutomaticReconnect()
       .build();
 
-    // Puntuación
+    // Score
     this.hub.on('scoreUpdated', (s: { homeScore: number; awayScore: number }) => {
       this.score.set({ home: s.homeScore, away: s.awayScore });
     });
 
-    // Timer (siempre con remainingSeconds)
+    // Timer
     this.hub.on('timerStarted', (t: { quarterEndsAtUtc: string; remainingSeconds: number }) => {
       this.timeLeft.set(t.remainingSeconds);
       this.timerRunning.set(true);
@@ -126,29 +122,18 @@ export class RealtimeService {
       this.endsAt = undefined;
     });
 
-    // Cuarto actual
-    // === Quarter (evento del backend) ===
+    // Quarter
     this.hub.on('quarterChanged', (p: { quarter: number }) => {
-      console.debug('[SignalR] quarterChanged ->', p?.quarter); // DEBUG
       if (typeof p.quarter === 'number') this.quarter.set(p.quarter);
     });
 
-
-
-    // Buzzer desde backend (inicio/fin cuarto o fin partido)
-    this.hub.on('buzzer', (_: any) => {
-      this.playBuzzer();
+    // 👇 NUEVO: faltas en tiempo real
+    this.hub.on('foulsUpdated', (p: { homeFouls: number; awayFouls: number }) => {
+      this.fouls.set({ home: p.homeFouls, away: p.awayFouls });
     });
 
-
-    // Cuarto actual (evento del backend)
-  this.hub.on('quarterChanged', (p: { quarter: number }) => {
-    console.debug('[SignalR] quarterChanged ->', p?.quarter); // 👈 DEBUG
-    if (typeof p.quarter === 'number') this.quarter.set(p.quarter);
-  });
-
-  
-
+    // Buzzer
+    this.hub.on('buzzer', (_: any) => { this.playBuzzer(); });
 
     // Fin de partido
     this.hub.on('gameEnded', (p: { home: number; away: number; winner: 'home'|'away'|'draw' }) => {

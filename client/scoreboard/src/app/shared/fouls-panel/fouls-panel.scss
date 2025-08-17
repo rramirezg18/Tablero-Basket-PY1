@@ -1,21 +1,20 @@
-.fouls-wrap {
+.fouls-panel {
   display: grid;
-  gap: 8px;
   justify-items: center;
-}
-.title {
-  font: 800 clamp(18px, 2.2vw, 28px)/1 "Impact", system-ui, sans-serif;
-  letter-spacing: 0.04em;
-}
-.counter {
-  width: clamp(62px, 7vw, 78px);
-  height: clamp(86px, 10vw, 120px);
-  border: 4px solid #fff;
-  background: #111;
-  display: grid;
-  place-items: center;
-}
-.num {
-  font-size: clamp(32px, 4vw, 48px);
-  line-height: 1;
+  .title {
+    letter-spacing: 2px;
+    font-weight: 800;
+    color: #cfe8ff;
+    margin-bottom: .5rem;
+  }
+  .box {
+    width: 90px;
+    height: 120px;
+    border: 4px solid #fff;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-size: 56px;
+    color: #fff;
+  }
 }

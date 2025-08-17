@@ -1,7 +1,8 @@
 <div class="board">
   <!-- TOP: FOULS + TIMER + FOULS -->
   <div class="top">
-    <app-fouls-panel class="fouls left"></app-fouls-panel>
+    <!-- ⬇️ lado HOME -->
+    <app-fouls-panel side="home" class="fouls left"></app-fouls-panel>
 
     <div class="timer-wrap">
       <div class="timer-bezel">
@@ -9,7 +10,8 @@
       </div>
     </div>
 
-    <app-fouls-panel class="fouls right"></app-fouls-panel>
+    <!-- ⬇️ lado AWAY -->
+    <app-fouls-panel side="away" class="fouls right"></app-fouls-panel>
   </div>
 
   <!-- MIDDLE: SCORE - POS/PERIOD - SCORE -->

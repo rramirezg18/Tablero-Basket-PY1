@@ -3,13 +3,11 @@
   <div class="toolbar">
     <button class="btn ghost">Help</button>
     <button class="btn ghost">Options</button>
-
-    <!-- ÚNICOS: registrar equipo y nuevo juego con equipos registrados -->
     <button class="btn" (click)="registerTeam()">Register Team</button>
-    <button class="btn" (click)="newGame()">New Game</button>
-
+    <button class="btn" (click)="newGameFromRegistered()">New Game (Teams)</button>
+    <button class="btn ghost" (click)="newGame()">New Game (manual)</button>
     <button class="btn">Correction</button>
-    <button class="btn">Buzzer</button>
+    <button class="btn" (click)="rt.beep()">Buzzer</button>
     <button class="btn ghost">Exit</button>
   </div>
 
@@ -19,13 +17,11 @@
       {{ rt.timerRunning() ? 'Running' : 'Paused' }}
     </div>
 
-    <!-- reloj dinámico -->
     <div class="clock">{{ clock() }}</div>
-
     <div class="status dark">Period Time</div>
 
     <div class="time-actions">
-      <button class="btn go" (click)="start()" [disabled]="rt.timerRunning() || isFinished()">Start</button>
+      <button class="btn go" (click)="start()" [disabled]="rt.timerRunning() || (rt.quarter()>=4 && rt.timeLeft()===0)">Start</button>
       <button class="btn stop" (click)="stop()">Stop</button>
       <button class="btn" (click)="timeout(30)">Timeout (0:30)</button>
       <button class="btn" (click)="timeout(60)">Timeout (1:00)</button>
@@ -46,7 +42,7 @@
     </div>
   </div>
 
-  <!-- Bonus -->
+  <!-- BONUS (visual) -->
   <div class="section">
     <div class="title">BONUS</div>
     <div class="bonus">
@@ -60,9 +56,7 @@
     <div class="title">PERIOD</div>
     <div class="period">
       <button class="btn minus" (click)="periodMinus()">-1</button>
-      <div class="period-box">
-        <span class="num">{{ rt.quarter() }}</span>
-      </div>
+      <div class="period-box"><span class="num">{{ rt.quarter() }}</span></div>
       <button class="btn plus" (click)="periodPlus()">+1</button>
     </div>
   </div>
@@ -79,10 +73,17 @@
         <div class="score-display">{{ homeScore() }}</div>
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,1)">+1</button>
       </div>
-
       <div class="score-actions">
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,3)">+3</button>
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,2)">+2</button>
+      </div>
+
+      <!-- ⬇️ NUEVO: FOULS HOME -->
+      <div class="sub" style="margin-top:.75rem">FOULS</div>
+      <div class="score-row">
+        <button class="btn neg" [disabled]="!homeTeamId" (click)="foul(homeTeamId,-1)">-1</button>
+        <div class="score-display">{{ homeFouls() }}</div>
+        <button class="btn pos" [disabled]="!homeTeamId" (click)="foul(homeTeamId,1)">+1</button>
       </div>
     </div>
 
@@ -96,10 +97,17 @@
         <div class="score-display">{{ awayScore() }}</div>
         <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,1)">+1</button>
       </div>
-
       <div class="score-actions">
         <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,3)">+3</button>
         <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,2)">+2</button>
+      </div>
+
+      <!-- ⬇️ NUEVO: FOULS AWAY -->
+      <div class="sub" style="margin-top:.75rem">FOULS</div>
+      <div class="score-row">
+        <button class="btn neg" [disabled]="!awayTeamId" (click)="foul(awayTeamId,-1)">-1</button>
+        <div class="score-display">{{ awayFouls() }}</div>
+        <button class="btn pos" [disabled]="!awayTeamId" (click)="foul(awayTeamId,1)">+1</button>
       </div>
     </div>
   </div>

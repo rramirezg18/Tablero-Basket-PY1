@@ -24,7 +24,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         if (m is null) return NotFound();
 
-        // Construir snapshot del timer con campos de Match
+        // Timer snapshot (desde Match)
         int remaining;
         bool running;
         DateTime? endsAt;
@@ -42,6 +42,10 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             endsAt = null;
         }
 
+        // Conteo de faltas por equipo (totales del partido; ajusta si más adelante quieres por cuarto)
+        var homeFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.HomeTeamId);
+        var awayFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.AwayTeamId);
+
         return Ok(new
         {
             id = m.Id,
@@ -54,7 +58,9 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             status = m.Status,
             quarterDurationSeconds = m.QuarterDurationSeconds,
             quarter = m.CurrentQuarter,
-            timer = new { running, remainingSeconds = remaining, quarterEndsAtUtc = endsAt }
+            timer = new { running, remainingSeconds = remaining, quarterEndsAtUtc = endsAt },
+            homeFouls,
+            awayFouls
         });
     }
 
@@ -83,13 +89,53 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             HomeScore = 0,
             AwayScore = 0,
             StartTimeUtc = null,
-
-            // Estado inicial del reloj
             CurrentQuarter = 1,
             IsRunning = false,
             RemainingSeconds = 0,
             QuarterEndsAtUtc = null
         };
+        db.Matches.Add(match);
+        await db.SaveChangesAsync();
+
+        return Ok(new
+        {
+            matchId = match.Id,
+            homeTeamId = home.Id,
+            awayTeamId = away.Id,
+            quarterDurationSeconds = match.QuarterDurationSeconds
+        });
+    }
+
+    // ===========================
+    // NEW GAME BY TEAM IDs
+    // ===========================
+    public record NewGameByTeamsDto(int HomeTeamId, int AwayTeamId, int? QuarterDurationSeconds);
+
+    [HttpPost("new-by-teams")]
+    public async Task<IActionResult> NewByTeams([FromBody] NewGameByTeamsDto dto)
+    {
+        if (dto.HomeTeamId <= 0 || dto.AwayTeamId <= 0 || dto.HomeTeamId == dto.AwayTeamId)
+            return BadRequest("Select two different teams");
+
+        var home = await db.Teams.FindAsync(dto.HomeTeamId);
+        var away = await db.Teams.FindAsync(dto.AwayTeamId);
+        if (home is null || away is null) return BadRequest("Invalid team ids");
+
+        var match = new Match
+        {
+            HomeTeamId = home.Id,
+            AwayTeamId = away.Id,
+            Status = "Scheduled",
+            QuarterDurationSeconds = dto.QuarterDurationSeconds is > 0 ? dto.QuarterDurationSeconds!.Value : 600,
+            HomeScore = 0,
+            AwayScore = 0,
+            StartTimeUtc = null,
+            CurrentQuarter = 1,
+            IsRunning = false,
+            RemainingSeconds = 0,
+            QuarterEndsAtUtc = null
+        };
+
         db.Matches.Add(match);
         await db.SaveChangesAsync();
 
@@ -153,6 +199,89 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
     }
 
     // ===========================
+    // FOULS (sumar/restar)
+    // ===========================
+    public record AddFoulDto(int TeamId, int? PlayerId, string? Type);
+
+    [HttpPost("{id}/fouls")]
+    public async Task<IActionResult> AddFoul(int id, [FromBody] AddFoulDto dto)
+    {
+        var m = await db.Matches.FindAsync(id);
+        if (m is null) return NotFound();
+
+        // Validar que el team pertenezca al partido
+        if (dto.TeamId != m.HomeTeamId && dto.TeamId != m.AwayTeamId)
+            return BadRequest("Invalid teamId for this match");
+
+        db.Fouls.Add(new Foul
+        {
+            MatchId = id,
+            TeamId = dto.TeamId,
+            PlayerId = dto.PlayerId,
+            Type = dto.Type,
+            CreatedUtc = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        // Recalcular y emitir
+        var homeFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.HomeTeamId);
+        var awayFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.AwayTeamId);
+
+        await hub.Clients.Group($"match-{id}")
+            .SendAsync("foulsUpdated", new { homeFouls, awayFouls });
+
+        return Ok(new { homeFouls, awayFouls });
+    }
+
+    public record AdjustFoulDto(int TeamId, int Delta);
+
+    [HttpPost("{id}/fouls/adjust")]
+    public async Task<IActionResult> AdjustFoul(int id, [FromBody] AdjustFoulDto dto)
+    {
+        var m = await db.Matches.FindAsync(id);
+        if (m is null) return NotFound();
+
+        if (dto.TeamId != m.HomeTeamId && dto.TeamId != m.AwayTeamId)
+            return BadRequest("Invalid teamId for this match");
+
+        if (dto.Delta > 0)
+        {
+            for (int i = 0; i < dto.Delta; i++)
+            {
+                db.Fouls.Add(new Foul
+                {
+                    MatchId = id,
+                    TeamId = dto.TeamId,
+                    CreatedUtc = DateTime.UtcNow
+                });
+            }
+        }
+        else if (dto.Delta < 0)
+        {
+            var toRemove = await db.Fouls
+                .Where(f => f.MatchId == id && f.TeamId == dto.TeamId)
+                .OrderByDescending(f => f.Id)
+                .Take(Math.Abs(dto.Delta))
+                .ToListAsync();
+
+            if (toRemove.Count == 0)
+                return BadRequest("No fouls to remove");
+
+            db.Fouls.RemoveRange(toRemove);
+        }
+
+        await db.SaveChangesAsync();
+
+        var homeFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.HomeTeamId);
+        var awayFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.AwayTeamId);
+
+        await hub.Clients.Group($"match-{id}")
+            .SendAsync("foulsUpdated", new { homeFouls, awayFouls });
+
+        return Ok(new { homeFouls, awayFouls });
+    }
+
+    // ===========================
     // TIMER START/PAUSE/RESUME/RESET
     // ===========================
     public record StartTimerDto(int? QuarterDurationSeconds);
@@ -176,7 +305,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         await hub.Clients.Group($"match-{id}")
           .SendAsync("timerStarted", new { quarterEndsAtUtc = m.QuarterEndsAtUtc, remainingSeconds = m.RemainingSeconds });
 
-        // Buzzer de inicio
         await hub.Clients.Group($"match-{id}")
           .SendAsync("quarterChanged", new { quarter = m.CurrentQuarter });
         await hub.Clients.Group($"match-{id}")
@@ -252,7 +380,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         else
             m.Status = "Finished";
 
-        // detener y resetear temporizador
         m.IsRunning = false;
         m.RemainingSeconds = 0;
         m.QuarterEndsAtUtc = null;
@@ -309,50 +436,4 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         return Ok(new { quarter = m.CurrentQuarter });
     }
-
-    // =============== NEW GAME BY TEAM IDs ===============
-    public record NewGameByTeamsDto(int HomeTeamId, int AwayTeamId, int? QuarterDurationSeconds);
-
-    [HttpPost("new-by-teams")]
-    public async Task<IActionResult> NewByTeams([FromBody] NewGameByTeamsDto dto)
-    {
-        if (dto.HomeTeamId <= 0 || dto.AwayTeamId <= 0 || dto.HomeTeamId == dto.AwayTeamId)
-            return BadRequest("Select two different teams");
-
-        var home = await db.Teams.FindAsync(dto.HomeTeamId);
-        var away = await db.Teams.FindAsync(dto.AwayTeamId);
-        if (home is null || away is null) return BadRequest("Invalid team ids");
-
-        var match = new Match
-        {
-            HomeTeamId = home.Id,
-            AwayTeamId = away.Id,
-            Status = "Scheduled",
-            QuarterDurationSeconds = dto.QuarterDurationSeconds is > 0 ? dto.QuarterDurationSeconds!.Value : 600,
-            HomeScore = 0,
-            AwayScore = 0,
-            StartTimeUtc = null,
-
-            // Estado inicial del reloj (tu modelo actual lo trae en Matches)
-            CurrentQuarter = 1,
-            IsRunning = false,
-            RemainingSeconds = 0,
-            QuarterEndsAtUtc = null
-        };
-
-        db.Matches.Add(match);
-        await db.SaveChangesAsync();
-
-        return Ok(new
-        {
-            matchId = match.Id,
-            homeTeamId = home.Id,
-            awayTeamId = away.Id,
-            quarterDurationSeconds = match.QuarterDurationSeconds
-        });
-    }
-
-
-
-
 }
