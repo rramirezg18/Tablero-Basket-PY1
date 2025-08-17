@@ -21,7 +21,14 @@
     <div class="status dark">Period Time</div>
 
     <div class="time-actions">
-      <button class="btn go" (click)="start()" [disabled]="rt.timerRunning() || (rt.quarter()>=4 && rt.timeLeft()===0)">Start</button>
+      <button class="btn go" (click)="start()" [disabled]="rt.timerRunning() || (rt.quarter()>=4 && rt.timeLeft()===0)">
+        Start
+      </button>
+
+      <button class="btn" (click)="resume()" [disabled]="rt.timerRunning() || rt.timeLeft()<=0">
+        Resume
+      </button>
+
       <button class="btn stop" (click)="stop()">Stop</button>
       <button class="btn" (click)="timeout(30)">Timeout (0:30)</button>
       <button class="btn" (click)="timeout(60)">Timeout (1:00)</button>

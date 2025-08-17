@@ -5,11 +5,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { ApiService } from '../../../core/api';
-import { RealtimeService } from '../../../core/realtime';
 import Swal from 'sweetalert2';
 
-// diálogos
+import { ApiService } from '../../../core/api';
+import { RealtimeService } from '../../../core/realtime';
+
+// Diálogos
 import { NewGameDialogComponent } from '../../matches/new-game-dialog';
 import { RegisterTeamDialogComponent } from '../../teams/register-team-dialog';
 
@@ -30,61 +31,76 @@ export class ControlPanelComponent implements OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private dialog = inject(MatDialog);
 
+  // Id partido desde ruta
   matchId = toSignal(this.route.paramMap.pipe(map(p => Number(p.get('id') ?? '1'))), { initialValue: 1 });
 
+  // Datos del partido
   homeTeamId?: number;
   awayTeamId?: number;
   homeName = 'HOME';
   awayName = 'AWAY';
 
+  // Cuarto real desde RealtimeService
   period = computed(() => this.rt.quarter());
 
+  // UI local
   possession = signal<Possession>('none');
   homeScore = signal(0);
   awayScore = signal(0);
 
-  // fouls desde RealtimeService
+  // Faltas desde RealtimeService
   homeFouls = computed(() => this.rt.fouls().home);
   awayFouls = computed(() => this.rt.fouls().away);
 
-  canScore = computed(() => (this.rt as any).timerRunning ? (this.rt as any).timerRunning() : true);
+  // Sólo se puede anotar cuando corre el timer
+  canScore = computed(() => this.rt.timerRunning());
 
+  // Reloj mm:ss desde timeLeft()
   clock = computed(() => {
-    const tl = (this.rt as any).timeLeft ? (this.rt as any).timeLeft() : 0;
+    const tl = this.rt.timeLeft();
     const m = Math.floor(tl / 60), s = tl % 60;
     return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
   });
 
+  // Auto-advance helpers
   private prevSecs = -1;
   private armed = true;
+  private zeroGuardUntil = 0;   // ventana para ignorar 0 tras stop/reset
+  private prevRunning = false;  // estado anterior del timer
 
   constructor() {
-    // sincroniza marcador local
+    // Sincroniza marcador local
     effect(() => {
       const s = this.rt.score();
       this.homeScore.set(s.home);
       this.awayScore.set(s.away);
     });
 
-    // fin de partido
+    // Fin de partido → SweetAlert con resultado
     effect(() => {
       const over = this.rt.gameOver?.();
       if (!over) return;
       this.showGameEndAlert(over.home, over.away, over.winner);
     });
 
-    // auto-avance con reintento
+    // AUTO-AVANCE con guardia para Stop/Reset
     effect(() => {
       const secs = this.rt.timeLeft();
-      if (this.prevSecs > 0 && secs === 0 && this.armed) {
-        this.armed = false;
+      const running = this.rt.timerRunning();
+      const guardActive = Date.now() < this.zeroGuardUntil;
+
+      // Sólo auto-avanzar si veníamos corriendo y llegamos naturalmente a 0
+      if (!guardActive && this.prevSecs > 0 && secs === 0 && this.prevRunning) {
         this.tryAutoAdvance();
       }
+
       if (secs > 0) this.armed = true;
+
       this.prevSecs = secs;
+      this.prevRunning = running;
     });
 
-    // carga inicial + conexión realtime
+    // Carga inicial + conexión realtime
     effect((onCleanup) => {
       const id = this.matchId();
       if (!id) return;
@@ -101,11 +117,8 @@ export class ControlPanelComponent implements OnDestroy {
           if (typeof m.quarter === 'number') this.rt.quarter.set(m.quarter);
           if (m.timer) this.rt.hydrateTimerFromSnapshot({ ...m.timer, quarter: m.quarter });
 
-          // ✅ hidratar faltas desde homeFouls/awayFouls
-          this.rt.hydrateFoulsFromSnapshot({
-            home: m.homeFouls ?? 0,
-            away: m.awayFouls ?? 0
-          });
+          // hidratar faltas si el GET las trae (opcional)
+          if (m.fouls) this.rt.hydrateFoulsFromSnapshot(m.fouls);
         },
         error: (e) => console.error('getMatch error', e)
       });
@@ -113,8 +126,12 @@ export class ControlPanelComponent implements OnDestroy {
       let disposed = false;
       if (isPlatformBrowser(this.platformId)) {
         (async () => {
-          try { await this.rt.disconnect(); if (!disposed) await this.rt.connect(id); }
-          catch (err) { console.error('SignalR connect error', err); }
+          try {
+            await this.rt.disconnect();
+            if (!disposed) await this.rt.connect(id);
+          } catch (err) {
+            console.error('SignalR connect error', err);
+          }
         })();
       }
 
@@ -124,22 +141,26 @@ export class ControlPanelComponent implements OnDestroy {
 
   ngOnDestroy(): void { this.rt.disconnect(); }
 
-  // === reintento para oficializar fin de cuarto
+  // === Reintento para oficializar fin de cuarto en backend ===
   private tryAutoAdvance(retry = 0) {
     const id = this.matchId();
     this.api.autoAdvanceQuarter(id).subscribe({
       next: (res: any) => {
+        // el backend ya subió el cuarto; el que terminó es (nuevo - 1)
         const ended = (res?.quarter ?? this.rt.quarter()) - 1;
-        this.showQuarterEndAlert(ended);
+        this.showQuarterEndAlert(ended); // buzzer llega por SignalR
       },
       error: (e) => {
-        if (retry < 8) setTimeout(() => this.tryAutoAdvance(retry + 1), 300);
-        else console.warn('autoAdvanceQuarter no confirmó', e);
+        if (retry < 8) {
+          setTimeout(() => this.tryAutoAdvance(retry + 1), 300);
+        } else {
+          console.warn('autoAdvanceQuarter no confirmó el fin del cuarto', e);
+        }
       }
     });
   }
 
-  // === flujo antiguo (manual por nombres)
+  // === Flujo antiguo (manual por nombres)
   newGame() {
     const home = (prompt('Nombre equipo local:', this.homeName) ?? '').trim();
     if (!home) return;
@@ -147,11 +168,12 @@ export class ControlPanelComponent implements OnDestroy {
     if (!away) return;
     const mins = Number(prompt('Duración del período (minutos):', '10') ?? '10');
     const qsec = Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 600;
+
     this.api.newGame({ homeName: home, awayName: away, quarterDurationSeconds: qsec })
       .subscribe({ next: (res: any) => this.router.navigate(['/control', res.matchId]) });
   }
 
-  // === puntos
+  // === Puntos
   add(teamId: number | undefined, points: 1 | 2 | 3) {
     if (!teamId || !this.canScore()) return;
     this.api.createScore(this.matchId(), { teamId, points }).subscribe();
@@ -161,15 +183,14 @@ export class ControlPanelComponent implements OnDestroy {
     this.api.adjustScore(this.matchId(), { teamId, delta: -1 }).subscribe();
   }
 
-  // === faltas
+  // === Faltas
   foul(teamId: number | undefined, delta: 1 | -1) {
     if (!teamId) return;
-    // 🔧 usa el nombre correcto del servicio: adjustFoul (singular)
     this.api.adjustFoul(this.matchId(), { teamId, delta }).subscribe();
   }
 
-  // === timer
-  start()  {
+  // === Timer
+  start() {
     this.api.startTimer(this.matchId()).subscribe({
       next: async () => {
         if (!isPlatformBrowser(this.platformId)) return;
@@ -177,16 +198,38 @@ export class ControlPanelComponent implements OnDestroy {
         const names = ['', 'Primer', 'Segundo', 'Tercer', 'Cuarto'];
         await Swal.fire({
           title: `Inicio del ${names[q] ?? q + 'º'} cuarto`,
-          icon: 'success', position: 'top', timer: 1200, showConfirmButton: false
+          icon: 'success',
+          position: 'top',
+          timer: 1200,
+          showConfirmButton: false
         });
       }
     });
   }
-  stop()   { this.api.pauseTimer(this.matchId()).subscribe(); }
-  resume() { this.api.resumeTimer(this.matchId()).subscribe(); }
-  reset()  { this.api.resetTimer(this.matchId()).subscribe(); }
-  timeout(sec: number) { this.api.startTimer(this.matchId(), { quarterDurationSeconds: sec }).subscribe(); }
 
+  stop() {
+    // Evita que el 0 provocado por pausa dispare auto-advance
+    this.armed = false;
+    this.prevSecs = 0;
+    this.zeroGuardUntil = Date.now() + 1500; // ignora 0 por 1.5s
+    this.api.pauseTimer(this.matchId()).subscribe();
+  }
+
+  resume() { this.api.resumeTimer(this.matchId()).subscribe(); }
+
+  reset() {
+    // Evita que el 0 provocado por reset dispare auto-advance
+    this.armed = false;
+    this.prevSecs = 0;
+    this.zeroGuardUntil = Date.now() + 1500; // ignora 0 por 1.5s
+    this.api.resetTimer(this.matchId()).subscribe();
+  }
+
+  timeout(sec: number) {
+    this.api.startTimer(this.matchId(), { quarterDurationSeconds: sec }).subscribe();
+  }
+
+  // === Periodo (real)
   periodMinus() { /* mantener consistente: no retroceder */ }
   periodPlus()  {
     const ended = this.rt.quarter();
@@ -195,11 +238,14 @@ export class ControlPanelComponent implements OnDestroy {
     });
   }
 
+  // === Posesión (visual local)
   posLeft()  { this.possession.set('home'); }
   posNone()  { this.possession.set('none'); }
   posRight() { this.possession.set('away'); }
 
   // ==== D I Á L O G O S  ====
+
+  // Registrar equipo
   registerTeam() {
     const ref = this.dialog.open(RegisterTeamDialogComponent, {
       width: '520px',
@@ -222,6 +268,7 @@ export class ControlPanelComponent implements OnDestroy {
     });
   }
 
+  // Nuevo partido con equipos registrados
   newGameFromRegistered() {
     const ref = this.dialog.open(NewGameDialogComponent, {
       width: '520px',
@@ -238,7 +285,7 @@ export class ControlPanelComponent implements OnDestroy {
     });
   }
 
-  // ==== alerts ====
+  // ==== Alerts ====
   private async showQuarterEndAlert(endedQuarter: number) {
     if (!isPlatformBrowser(this.platformId)) return;
     const names = ['', 'Primer', 'Segundo', 'Tercer', 'Cuarto'];
@@ -248,6 +295,7 @@ export class ControlPanelComponent implements OnDestroy {
       showConfirmButton: false, backdrop: true, background: '#ffffff', color: '#111'
     });
   }
+
   private async showGameEndAlert(home: number, away: number, winner: 'home'|'away'|'draw') {
     if (!isPlatformBrowser(this.platformId)) return;
     let text = winner === 'draw' ? `Empate ${home} - ${away}` :
