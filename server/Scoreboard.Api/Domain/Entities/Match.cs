@@ -15,11 +15,20 @@ public class Match
     public int HomeScore { get; set; }
     public int AwayScore { get; set; }
 
+    // ===== Estado del reloj/cuarto ahora en Match (antes en TimerState) =====
+    public int CurrentQuarter { get; set; } = 1;      // 1..4
+    public bool IsRunning { get; set; } = false;
+    public int RemainingSeconds { get; set; } = 0;
+    public DateTime? QuarterEndsAtUtc { get; set; }
+
+    // Metadatos existentes
     public DateTime? StartTimeUtc { get; set; }
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 
+    // Navegación
     public Team HomeTeam { get; set; } = null!;
     public Team AwayTeam { get; set; } = null!;
 
+    // Si no usas Quarters/Fouls como navegación, puedes dejarlas fuera.
     public ICollection<ScoreEvent> ScoreEvents { get; set; } = new List<ScoreEvent>();
 }

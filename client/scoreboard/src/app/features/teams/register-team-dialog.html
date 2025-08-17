@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Register Team</h2>
+
+<div mat-dialog-content class="dialog-content">
+  <mat-form-field appearance="outline">
+    <mat-label>Team name</mat-label>
+    <input matInput placeholder="e.g. Raptors" [formControl]="form.controls.name" />
+  </mat-form-field>
+
+  <div class="row">
+    <mat-form-field appearance="outline" class="grow">
+      <mat-label>Color (optional)</mat-label>
+      <input matInput [formControl]="form.controls.color" />
+    </mat-form-field>
+
+    <!-- Color picker nativo para mejor UX -->
+    <input type="color" class="color-swatch" [formControl]="form.controls.color" />
+  </div>
+
+  <div class="players-section">
+    <div class="players-add row">
+      <mat-form-field appearance="outline" class="num">
+        <mat-label>#</mat-label>
+        <input matInput type="number" min="0" [formControl]="newPlayer.controls.number" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="grow">
+        <mat-label>Player name</mat-label>
+        <input matInput placeholder="John Doe" [formControl]="newPlayer.controls.name" />
+      </mat-form-field>
+
+      <button mat-flat-button color="primary" (click)="addPlayer()">Add</button>
+    </div>
+
+    <div class="players-list" *ngIf="players.length > 0">
+      <div class="player-row" *ngFor="let p of players.controls; let i = index">
+        <div class="num">{{ p.value.number ?? '—' }}</div>
+        <div class="name">{{ p.value.name }}</div>
+        <button mat-icon-button color="warn" (click)="removePlayer(i)" aria-label="Remove">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid">Save</button>
+</div>

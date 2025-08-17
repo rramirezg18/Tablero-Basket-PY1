@@ -4,9 +4,15 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { map } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
+import { firstValueFrom } from 'rxjs';
+import Swal from 'sweetalert2';
+
 import { ApiService } from '../../../core/api';
 import { RealtimeService } from '../../../core/realtime';
-import Swal from 'sweetalert2';
+import { NewGameDialogComponent } from '../../matches/new-game-dialog';
+import { RegisterTeamDialogComponent } from '../../teams/register-team-dialog';
+
 
 type Possession = 'none' | 'home' | 'away';
 
@@ -23,6 +29,7 @@ export class ControlPanelComponent implements OnDestroy {
   public rt = inject(RealtimeService);
   private api = inject(ApiService);
   private platformId = inject(PLATFORM_ID);
+  private dialog = inject(MatDialog);
 
   // id de partido
   matchId = toSignal(this.route.paramMap.pipe(map(p => Number(p.get('id') ?? '1'))), { initialValue: 1 });
@@ -33,7 +40,7 @@ export class ControlPanelComponent implements OnDestroy {
   homeName = 'HOME';
   awayName = 'AWAY';
 
-  // cuarto REAL desde el servicio
+  // cuarto real
   period = computed(() => this.rt.quarter());
 
   // UI local
@@ -41,10 +48,8 @@ export class ControlPanelComponent implements OnDestroy {
   homeScore = signal(0);
   awayScore = signal(0);
 
-  // habilitar anotación solo cuando corre el timer
   canScore = computed(() => (this.rt as any).timerRunning ? (this.rt as any).timerRunning() : true);
 
-  // reloj mm:ss desde timeLeft()
   clock = computed(() => {
     const tl = (this.rt as any).timeLeft ? (this.rt as any).timeLeft() : 0;
     const m = Math.floor(tl / 60);
@@ -52,7 +57,14 @@ export class ControlPanelComponent implements OnDestroy {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   });
 
-  // auto-advance flags
+  // Deshabilitar "Start" cuando corre el reloj o el juego ya terminó
+  // El partido SOLO se considera terminado cuando llega el evento "gameEnded"
+  isFinished = computed(() => {
+    return !!(this.rt as any).gameOver?.(); // true solo tras recibir 'gameEnded'
+  });
+
+
+
   private prevSecs = -1;
   private armed = true;
 
@@ -64,29 +76,25 @@ export class ControlPanelComponent implements OnDestroy {
       this.awayScore.set(s.away);
     });
 
-    // FIN DE PARTIDO → SweetAlert con resultado
+    // fin de partido
     effect(() => {
       const over = this.rt.gameOver?.();
       if (!over) return;
       this.showGameEndAlert(over.home, over.away, over.winner);
     });
 
-    // AUTO-AVANCE: detecta transición >0 → 0 y reintenta si hay drift cliente/servidor
+    // auto-advance con reintento
     effect(() => {
       const secs = this.rt.timeLeft();
-
       if (this.prevSecs > 0 && secs === 0 && this.armed) {
         this.armed = false;
-        this.tryAutoAdvance(); // ✅ reintento corto
+        this.tryAutoAdvance();
       }
-
-      // re-armar cuando vuelve a haber tiempo (nuevo cuarto o reanudación)
       if (secs > 0) this.armed = true;
-
       this.prevSecs = secs;
     });
 
-    // Carga inicial + conexión realtime
+    // carga inicial + realtime
     effect((onCleanup) => {
       const id = this.matchId();
       if (!id) return;
@@ -130,38 +138,56 @@ export class ControlPanelComponent implements OnDestroy {
     this.rt.disconnect();
   }
 
-  // === Reintento para oficializar el fin de cuarto en backend ===
-  private tryAutoAdvance(retry = 0) {
-    const id = this.matchId();
-    this.api.autoAdvanceQuarter(id).subscribe({
-      next: (res: any) => {
-        // el backend ya subió el cuarto; el que terminó es (nuevo - 1)
-        const ended = (res?.quarter ?? this.rt.quarter()) - 1;
-        this.showQuarterEndAlert(ended); // el buzzer llega por SignalR
-      },
-      error: (e) => {
-        if (retry < 8) { // ~2.4s máx (8 * 300ms)
-          setTimeout(() => this.tryAutoAdvance(retry + 1), 300);
-        } else {
-          console.warn('autoAdvanceQuarter no confirmó el fin del cuarto', e);
-        }
-      }
-    });
+  // === New Game (único flujo) ===
+  async newGame() {
+    const ref = this.dialog.open(NewGameDialogComponent, { autoFocus: true });
+    const data = await ref.afterClosed().toPromise();
+    if (!data) return;
+
+    try {
+      const res = await firstValueFrom(
+        this.api.newGameByTeams({
+          homeTeamId: data.homeTeamId,
+          awayTeamId: data.awayTeamId,
+          quarterDurationSeconds: data.quarterDurationSeconds
+        })
+      );
+      this.router.navigate(['/control', res.matchId]);
+    } catch (e: any) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error creating match',
+        text: e?.error ?? e?.message ?? 'Unknown error'
+      });
+    }
   }
 
-  // === New Game ===
-  newGame() {
-    const home = (prompt('Nombre equipo local:', this.homeName) ?? '').trim();
-    if (!home) return;
-    const away = (prompt('Nombre equipo visitante:', this.awayName) ?? '').trim();
-    if (!away) return;
-    const mins = Number(prompt('Duración del período (minutos):', '10') ?? '10');
-    const qsec = Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 600;
+  // === Registrar equipo (dialog) ===
+  async registerTeam() {
+    const ref = this.dialog.open(RegisterTeamDialogComponent, { autoFocus: true });
+    const form = await ref.afterClosed().toPromise();
+    if (!form) return;
 
-    this.api.newGame({ homeName: home, awayName: away, quarterDurationSeconds: qsec }).subscribe({
-      next: (res: any) => this.router.navigate(['/control', res.matchId]),
-      error: (e) => console.error('newGame error', e)
-    });
+    try {
+      const res = await firstValueFrom(this.api.createTeam({
+        name: form.name,
+        color: form.color,
+        players: form.players
+      }));
+      await Swal.fire({
+        icon: 'success',
+        title: `Team "${res.name}" created`,
+        timer: 1200,
+        showConfirmButton: false,
+        position: 'top'
+      });
+    } catch (e: any) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Error creating team',
+        text: e?.error ?? e?.message ?? 'Unknown error'
+      });
+    }
   }
 
   // === puntos ===
@@ -196,7 +222,6 @@ export class ControlPanelComponent implements OnDestroy {
       error: (e) => console.error('startTimer error', e)
     });
   }
-
   stop()   { this.api.pauseTimer(this.matchId()).subscribe(); }
   resume() { this.api.resumeTimer(this.matchId()).subscribe(); }
   reset()  { this.api.resetTimer(this.matchId()).subscribe(); }
@@ -205,13 +230,11 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   // === periodo (real)
-  periodMinus() { /* opcional: no retroceder para mantener consistencia */ }
+  periodMinus() { /* sin retroceder para consistencia */ }
   periodPlus()  {
     const ended = this.rt.quarter();
     this.api.advanceQuarter(this.matchId()).subscribe({
-      next: async () => {
-        await this.showQuarterEndAlert(ended);
-      },
+      next: async () => { await this.showQuarterEndAlert(ended); },
       error: (e) => console.error('advanceQuarter error', e)
     });
   }
@@ -221,36 +244,29 @@ export class ControlPanelComponent implements OnDestroy {
   posNone()  { this.possession.set('none'); }
   posRight() { this.possession.set('away'); }
 
-  // === SweetAlerts ===
-  private async showQuarterStartAlert(q: number) {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const names = ['', 'Primer', 'Segundo', 'Tercer', 'Cuarto'];
-    await Swal.fire({
-      title: `Inicio del ${names[q] ?? q + 'º'} cuarto`,
-      icon: 'success',
-      position: 'top',
-      timer: 1200,
-      showConfirmButton: false
+  // === auto-advance helper ===
+  private tryAutoAdvance(retry = 0) {
+    const id = this.matchId();
+    this.api.autoAdvanceQuarter(id).subscribe({
+      next: (res: any) => {
+        const ended = (res?.quarter ?? this.rt.quarter()) - 1;
+        this.showQuarterEndAlert(ended);
+      },
+      error: (e) => {
+        if (retry < 8) setTimeout(() => this.tryAutoAdvance(retry + 1), 300);
+        else console.warn('autoAdvanceQuarter no confirmó el fin del cuarto', e);
+      }
     });
   }
 
+  // === alerts ===
   private async showQuarterEndAlert(endedQuarter: number) {
     if (!isPlatformBrowser(this.platformId)) return;
     const names = ['', 'Primer', 'Segundo', 'Tercer', 'Cuarto'];
-    const title = endedQuarter >= 1 && endedQuarter <= 4
-      ? `Fin del ${names[endedQuarter]} cuarto`
-      : 'Fin de cuarto';
-
+    const title = endedQuarter >= 1 && endedQuarter <= 4 ? `Fin del ${names[endedQuarter]} cuarto` : 'Fin de cuarto';
     await Swal.fire({
-      title,
-      icon: 'info',
-      position: 'top',
-      timer: 1600,
-      timerProgressBar: true,
-      showConfirmButton: false,
-      backdrop: true,
-      background: '#ffffff',
-      color: '#111'
+      title, icon: 'info', position: 'top', timer: 1600, timerProgressBar: true,
+      showConfirmButton: false, backdrop: true, background: '#ffffff', color: '#111'
     });
   }
 
@@ -260,13 +276,6 @@ export class ControlPanelComponent implements OnDestroy {
     if (winner === 'draw') text = `Empate ${home} - ${away}`;
     else if (winner === 'home') text = `¡Ganó ${this.homeName}! ${home} - ${away}`;
     else text = `¡Ganó ${this.awayName}! ${away} - ${home}`;
-
-    await Swal.fire({
-      title: 'Fin del partido',
-      text,
-      icon: 'warning',
-      position: 'top',
-      showConfirmButton: true
-    });
+    await Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
   }
 }

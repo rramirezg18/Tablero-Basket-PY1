@@ -3,7 +3,11 @@
   <div class="toolbar">
     <button class="btn ghost">Help</button>
     <button class="btn ghost">Options</button>
+
+    <!-- ÚNICOS: registrar equipo y nuevo juego con equipos registrados -->
+    <button class="btn" (click)="registerTeam()">Register Team</button>
     <button class="btn" (click)="newGame()">New Game</button>
+
     <button class="btn">Correction</button>
     <button class="btn">Buzzer</button>
     <button class="btn ghost">Exit</button>
@@ -21,7 +25,7 @@
     <div class="status dark">Period Time</div>
 
     <div class="time-actions">
-      <button class="btn go" (click)="start()">Start</button>
+      <button class="btn go" (click)="start()" [disabled]="rt.timerRunning() || isFinished()">Start</button>
       <button class="btn stop" (click)="stop()">Stop</button>
       <button class="btn" (click)="timeout(30)">Timeout (0:30)</button>
       <button class="btn" (click)="timeout(60)">Timeout (1:00)</button>
@@ -70,14 +74,12 @@
       <div class="name">{{ homeName }}</div>
       <div class="sub">SCORE</div>
 
-      <!-- Fila principal: -1 | [ SCORE ] | +1 -->
       <div class="score-row">
         <button class="btn neg" [disabled]="!homeTeamId || !canScore()" (click)="minus1(homeTeamId)">-1</button>
         <div class="score-display">{{ homeScore() }}</div>
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,1)">+1</button>
       </div>
 
-      <!-- Fila inferior compacta: +3 | +2 -->
       <div class="score-actions">
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,3)">+3</button>
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,2)">+2</button>

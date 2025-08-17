@@ -10,21 +10,19 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2) EF Core (SQL Server) - usa la cadena de conexión "Default"
+// 2) EF Core (SQL Server) - usa la cadena "DefaultConnection"
 builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 3) SignalR (opcional)
+// 3) SignalR
 builder.Services.AddSignalR();
 
-// 4) CORS solo para desarrollo (Angular dev server en 4200)
+// 4) CORS (Angular dev server)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
     {
-        policy.WithOrigins(
-                "http://localhost:4200",
-                "http://127.0.0.1:4200")
+        policy.WithOrigins("http://localhost:4200", "http://127.0.0.1:4200")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -38,22 +36,22 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseCors("DevCors"); // habilita CORS solo en dev
+    app.UseCors("DevCors");
 }
 
 // 6) Archivos estáticos (wwwroot) para servir Angular en PROD
-// Si copiaste el build de Angular a wwwroot (Dockerfile), esto servirá el front.
-app.UseDefaultFiles();  // busca index.html por defecto
-app.UseStaticFiles();   // sirve /wwwroot
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.MapControllers();
 
-// 7) SignalR hub (si lo usas)
+// 7) SignalR hub
 app.MapHub<ScoreHub>("/hubs/score");
 
-// 8) SPA Fallback: si no hay ruta de API/archivo, devuelve index.html
+// 8) SPA Fallback
 app.MapFallbackToFile("/index.html");
 
+// Migraciones + seed mínimo
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -62,7 +60,7 @@ using (var scope = app.Services.CreateScope())
     if (!db.Teams.Any())
     {
         var home = new Team { Name = "Locales", Color = "#0044FF" };
-        var away = new Team { Name = "Visitantes", Color = "#FF3300" };
+        var away  = new Team { Name = "Visitantes", Color = "#FF3300" };
         db.AddRange(home, away);
         await db.SaveChangesAsync();
 
@@ -70,9 +68,15 @@ using (var scope = app.Services.CreateScope())
         {
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,
-            Status = "Live",
-            //CurrentQuarter = 1,
-            QuarterDurationSeconds = 600
+            Status = "Scheduled",
+            QuarterDurationSeconds = 600,
+            HomeScore = 0,
+            AwayScore = 0,
+            // Estado de reloj/cuarto inicial
+            CurrentQuarter = 1,
+            IsRunning = false,
+            RemainingSeconds = 0,
+            QuarterEndsAtUtc = null
         });
         await db.SaveChangesAsync();
     }

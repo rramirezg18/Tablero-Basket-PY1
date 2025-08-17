@@ -11,7 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Quarter> Quarters => Set<Quarter>();
     public DbSet<ScoreEvent> ScoreEvents => Set<ScoreEvent>();
     public DbSet<Foul> Fouls => Set<Foul>();
-    public DbSet<TimerState> TimerStates => Set<TimerState>();
+    // ⛔️ Eliminado: public DbSet<TimerState> TimerStates => Set<TimerState>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -39,14 +39,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Match>()
             .Property(m => m.Status).HasMaxLength(16);
 
-        // Quarter  (sin Match.Quarters)
+        // Quarter  (sin navegación inversa en Match)
         b.Entity<Quarter>()
-            .HasOne(q => q.Match).WithMany()                 // <— antes: WithMany(m => m.Quarters)
+            .HasOne(q => q.Match).WithMany() // antes: WithMany(m => m.Quarters)
             .HasForeignKey(q => q.MatchId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<Quarter>()
             .HasIndex(q => new { q.MatchId, q.Number }).IsUnique();
 
-        // ScoreEvent (Match tiene ScoreEvents; si no, cambia a WithMany())
+        // ScoreEvent
         b.Entity<ScoreEvent>()
             .HasOne(se => se.Match).WithMany(m => m.ScoreEvents)
             .HasForeignKey(se => se.MatchId).OnDelete(DeleteBehavior.Cascade);
@@ -61,9 +61,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.CreatedUtc);
 
-        // Foul  (sin Match.Fouls)
+        // Foul  (sin navegación inversa en Match)
         b.Entity<Foul>()
-            .HasOne(f => f.Match).WithMany()                 // <— antes: WithMany(m => m.Fouls)
+            .HasOne(f => f.Match).WithMany() // antes: WithMany(m => m.Fouls)
             .HasForeignKey(f => f.MatchId).OnDelete(DeleteBehavior.Cascade);
         b.Entity<Foul>()
             .HasOne(f => f.Team).WithMany()
@@ -74,13 +74,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Foul>()
             .HasIndex(f => new { f.MatchId, f.TeamId });
 
-        // TimerState 1–1 (sin Match.TimerState)
-        b.Entity<TimerState>()
-            .HasOne(ts => ts.Match).WithOne()               // <— antes: WithOne(m => m.TimerState!)
-            .HasForeignKey<TimerState>(ts => ts.MatchId)
-            .OnDelete(DeleteBehavior.Cascade);
-        b.Entity<TimerState>()
-            .HasIndex(ts => ts.MatchId).IsUnique();
+        // ⛔️ Eliminado: configuración de TimerState
 
         base.OnModelCreating(b);
     }
