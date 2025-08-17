@@ -78,11 +78,11 @@
         <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,2)">+2</button>
       </div>
 
-      <!-- ⬇️ NUEVO: FOULS HOME -->
-      <div class="sub" style="margin-top:.75rem">FOULS</div>
-      <div class="score-row">
+      <!-- FOULS HOME (horizontal) -->
+      <div class="sub fouls-title">FOULS</div>
+      <div class="fouls-row">
         <button class="btn neg" [disabled]="!homeTeamId" (click)="foul(homeTeamId,-1)">-1</button>
-        <div class="score-display">{{ homeFouls() }}</div>
+        <div class="fouls-display">{{ homeFouls() }}</div>
         <button class="btn pos" [disabled]="!homeTeamId" (click)="foul(homeTeamId,1)">+1</button>
       </div>
     </div>
@@ -102,11 +102,11 @@
         <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,2)">+2</button>
       </div>
 
-      <!-- ⬇️ NUEVO: FOULS AWAY -->
-      <div class="sub" style="margin-top:.75rem">FOULS</div>
-      <div class="score-row">
+      <!-- FOULS AWAY (horizontal) -->
+      <div class="sub fouls-title">FOULS</div>
+      <div class="fouls-row">
         <button class="btn neg" [disabled]="!awayTeamId" (click)="foul(awayTeamId,-1)">-1</button>
-        <div class="score-display">{{ awayFouls() }}</div>
+        <div class="fouls-display">{{ awayFouls() }}</div>
         <button class="btn pos" [disabled]="!awayTeamId" (click)="foul(awayTeamId,1)">+1</button>
       </div>
     </div>

@@ -200,4 +200,43 @@
   .score-actions {
     grid-template-columns: repeat(2, 100px);
   }
+
+}
+
+
+/* --- FOUls en una sola fila --- */
+.fouls-title {
+  margin-top: .75rem;
+}
+
+.fouls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;           /* separación entre botones y display */
+  margin-top: .25rem;
+}
+
+.fouls-display {
+  min-width: 4rem;
+  text-align: center;
+  font-weight: 800;
+  font-size: 2rem;
+  line-height: 1.1;
+  padding: .25rem .75rem;
+  border-radius: .5rem;
+  border: 2px solid rgba(255,255,255,.25);
+}
+
+/* Asegura tamaño de botones ±1 consistente con los de score */
+.fouls-row .btn.neg,
+.fouls-row .btn.pos {
+  min-width: 3.25rem;   /* que no “salten” */
+  font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 720px) {
+  .fouls-display { min-width: 3rem; font-size: 1.5rem; }
+  .fouls-row { gap: .5rem; }
 }
