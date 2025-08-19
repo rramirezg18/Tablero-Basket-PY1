@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Scoreboard.Api.Domain.Entities;
 
 public class Match
@@ -15,20 +18,19 @@ public class Match
     public int HomeScore { get; set; }
     public int AwayScore { get; set; }
 
-    // ===== Estado del reloj/cuarto ahora en Match (antes en TimerState) =====
-    public int CurrentQuarter { get; set; } = 1;      // 1..4
+    // ===== Estado del reloj/período ahora en Match =====
+    public int Period { get; set; } = 1;           // 1..4 (antes CurrentQuarter)
     public bool IsRunning { get; set; } = false;
     public int RemainingSeconds { get; set; } = 0;
-    public DateTime? QuarterEndsAtUtc { get; set; }
+    public DateTime? PeriodEnd { get; set; }       // antes QuarterEndsAtUtc
 
-    // Metadatos existentes
-    public DateTime? StartTimeUtc { get; set; }
-    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
+    // Metadatos existentes (renombrados)
+    public DateTime? StartMatch { get; set; }      // antes StartTimeUtc
+    public DateTime DateMatch { get; set; } = DateTime.UtcNow; // antes CreatedUtc
 
     // Navegación
     public Team HomeTeam { get; set; } = null!;
     public Team AwayTeam { get; set; } = null!;
 
-    // Si no usas Quarters/Fouls como navegación, puedes dejarlas fuera.
     public ICollection<ScoreEvent> ScoreEvents { get; set; } = new List<ScoreEvent>();
 }

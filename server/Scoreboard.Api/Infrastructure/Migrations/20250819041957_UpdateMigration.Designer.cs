@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Scoreboard.Api.Infrastructure;
 
@@ -11,9 +12,11 @@ using Scoreboard.Api.Infrastructure;
 namespace Scoreboard.Api.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250819041957_UpdateMigration")]
+    partial class UpdateMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -193,7 +196,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Property<string>("Color")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("DateRegister")
+                    b.Property<DateTime>("CreatedUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
@@ -206,33 +209,6 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Teams");
-                });
-
-            modelBuilder.Entity("Scoreboard.Api.Domain.Entities.TeamWin", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("DateRegistered")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("MatchId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MatchId");
-
-                    b.HasIndex("TeamId", "MatchId")
-                        .IsUnique();
-
-                    b.ToTable("TeamWins");
                 });
 
             modelBuilder.Entity("Scoreboard.Api.Domain.Entities.Foul", b =>
@@ -313,25 +289,6 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("Match");
 
                     b.Navigation("Player");
-
-                    b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("Scoreboard.Api.Domain.Entities.TeamWin", b =>
-                {
-                    b.HasOne("Scoreboard.Api.Domain.Entities.Match", "Match")
-                        .WithMany()
-                        .HasForeignKey("MatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Scoreboard.Api.Domain.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Match");
 
                     b.Navigation("Team");
                 });

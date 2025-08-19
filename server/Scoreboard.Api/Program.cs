@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2) EF Core (SQL Server) - usa la cadena "DefaultConnection"
+// 2) EF Core (SQL Server)
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -39,7 +39,7 @@ if (app.Environment.IsDevelopment())
     app.UseCors("DevCors");
 }
 
-// 6) Archivos estáticos (wwwroot) para servir Angular en PROD
+// 6) Archivos estáticos (wwwroot)
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -72,11 +72,15 @@ using (var scope = app.Services.CreateScope())
             QuarterDurationSeconds = 600,
             HomeScore = 0,
             AwayScore = 0,
-            // Estado de reloj/cuarto inicial
-            CurrentQuarter = 1,
+
+            // Estado de período inicial
+            Period = 1,
             IsRunning = false,
             RemainingSeconds = 0,
-            QuarterEndsAtUtc = null
+            PeriodEnd = null,
+
+            StartMatch = null,
+            DateMatch = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
     }

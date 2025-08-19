@@ -24,16 +24,15 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         if (m is null) return NotFound();
 
-        // Timer snapshot (desde Match)
         int remaining;
         bool running;
         DateTime? endsAt;
 
-        if (m.IsRunning && m.QuarterEndsAtUtc is not null)
+        if (m.IsRunning && m.PeriodEnd is not null)
         {
-            remaining = Math.Max(0, (int)Math.Ceiling((m.QuarterEndsAtUtc.Value - DateTime.UtcNow).TotalSeconds));
+            remaining = Math.Max(0, (int)Math.Ceiling((m.PeriodEnd.Value - DateTime.UtcNow).TotalSeconds));
             running = true;
-            endsAt = m.QuarterEndsAtUtc;
+            endsAt = m.PeriodEnd;
         }
         else
         {
@@ -42,7 +41,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             endsAt = null;
         }
 
-        // Conteo de faltas por equipo (totales del partido; ajusta si más adelante quieres por cuarto)
         var homeFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.HomeTeamId);
         var awayFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.AwayTeamId);
 
@@ -57,7 +55,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             awayScore = m.AwayScore,
             status = m.Status,
             quarterDurationSeconds = m.QuarterDurationSeconds,
-            quarter = m.CurrentQuarter,
+            quarter = m.Period,
             timer = new { running, remainingSeconds = remaining, quarterEndsAtUtc = endsAt },
             homeFouls,
             awayFouls
@@ -88,11 +86,13 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             QuarterDurationSeconds = dto.QuarterDurationSeconds is > 0 ? dto.QuarterDurationSeconds!.Value : 600,
             HomeScore = 0,
             AwayScore = 0,
-            StartTimeUtc = null,
-            CurrentQuarter = 1,
+            StartMatch = null,
+            DateMatch = DateTime.UtcNow,
+
+            Period = 1,
             IsRunning = false,
             RemainingSeconds = 0,
-            QuarterEndsAtUtc = null
+            PeriodEnd = null
         };
         db.Matches.Add(match);
         await db.SaveChangesAsync();
@@ -129,11 +129,13 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             QuarterDurationSeconds = dto.QuarterDurationSeconds is > 0 ? dto.QuarterDurationSeconds!.Value : 600,
             HomeScore = 0,
             AwayScore = 0,
-            StartTimeUtc = null,
-            CurrentQuarter = 1,
+            StartMatch = null,
+            DateMatch = DateTime.UtcNow,
+
+            Period = 1,
             IsRunning = false,
             RemainingSeconds = 0,
-            QuarterEndsAtUtc = null
+            PeriodEnd = null
         };
 
         db.Matches.Add(match);
@@ -209,7 +211,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        // Validar que el team pertenezca al partido
         if (dto.TeamId != m.HomeTeamId && dto.TeamId != m.AwayTeamId)
             return BadRequest("Invalid teamId for this match");
 
@@ -219,11 +220,10 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
             TeamId = dto.TeamId,
             PlayerId = dto.PlayerId,
             Type = dto.Type,
-            CreatedUtc = DateTime.UtcNow
+            DateRegister = DateTime.UtcNow
         });
         await db.SaveChangesAsync();
 
-        // Recalcular y emitir
         var homeFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.HomeTeamId);
         var awayFouls = await db.Fouls.CountAsync(f => f.MatchId == id && f.TeamId == m.AwayTeamId);
 
@@ -252,7 +252,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
                 {
                     MatchId = id,
                     TeamId = dto.TeamId,
-                    CreatedUtc = DateTime.UtcNow
+                    DateRegister = DateTime.UtcNow
                 });
             }
         }
@@ -296,21 +296,21 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         m.RemainingSeconds = m.QuarterDurationSeconds;
         m.IsRunning = true;
-        m.QuarterEndsAtUtc = DateTime.UtcNow.AddSeconds(m.RemainingSeconds);
+        m.PeriodEnd = DateTime.UtcNow.AddSeconds(m.RemainingSeconds);
         m.Status = "Live";
-        m.StartTimeUtc ??= DateTime.UtcNow;
+        m.StartMatch ??= DateTime.UtcNow;
 
         await db.SaveChangesAsync();
 
         await hub.Clients.Group($"match-{id}")
-          .SendAsync("timerStarted", new { quarterEndsAtUtc = m.QuarterEndsAtUtc, remainingSeconds = m.RemainingSeconds });
+          .SendAsync("timerStarted", new { quarterEndsAtUtc = m.PeriodEnd, remainingSeconds = m.RemainingSeconds });
 
         await hub.Clients.Group($"match-{id}")
-          .SendAsync("quarterChanged", new { quarter = m.CurrentQuarter });
+          .SendAsync("quarterChanged", new { quarter = m.Period });
         await hub.Clients.Group($"match-{id}")
           .SendAsync("buzzer", new { reason = "quarter-start" });
 
-        return Ok(new { remainingSeconds = m.RemainingSeconds, quarterEndsAtUtc = m.QuarterEndsAtUtc });
+        return Ok(new { remainingSeconds = m.RemainingSeconds, quarterEndsAtUtc = m.PeriodEnd });
     }
 
     [HttpPost("{id}/timer/pause")]
@@ -319,11 +319,11 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        if (m.IsRunning && m.QuarterEndsAtUtc is not null)
-            m.RemainingSeconds = Math.Max(0, (int)Math.Ceiling((m.QuarterEndsAtUtc.Value - DateTime.UtcNow).TotalSeconds));
+        if (m.IsRunning && m.PeriodEnd is not null)
+            m.RemainingSeconds = Math.Max(0, (int)Math.Ceiling((m.PeriodEnd.Value - DateTime.UtcNow).TotalSeconds));
 
         m.IsRunning = false;
-        m.QuarterEndsAtUtc = null;
+        m.PeriodEnd = null;
 
         await db.SaveChangesAsync();
         await hub.Clients.Group($"match-{id}")
@@ -340,13 +340,13 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         if (m.RemainingSeconds <= 0) return BadRequest("Nothing to resume");
 
         m.IsRunning = true;
-        m.QuarterEndsAtUtc = DateTime.UtcNow.AddSeconds(m.RemainingSeconds);
+        m.PeriodEnd = DateTime.UtcNow.AddSeconds(m.RemainingSeconds);
 
         await db.SaveChangesAsync();
         await hub.Clients.Group($"match-{id}")
-          .SendAsync("timerResumed", new { quarterEndsAtUtc = m.QuarterEndsAtUtc, remainingSeconds = m.RemainingSeconds });
+          .SendAsync("timerResumed", new { quarterEndsAtUtc = m.PeriodEnd, remainingSeconds = m.RemainingSeconds });
 
-        return Ok(new { remainingSeconds = m.RemainingSeconds, quarterEndsAtUtc = m.QuarterEndsAtUtc });
+        return Ok(new { remainingSeconds = m.RemainingSeconds, quarterEndsAtUtc = m.PeriodEnd });
     }
 
     [HttpPost("{id}/timer/reset")]
@@ -357,7 +357,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
 
         m.IsRunning = false;
         m.RemainingSeconds = 0;
-        m.QuarterEndsAtUtc = null;
+        m.PeriodEnd = null;
 
         await db.SaveChangesAsync();
         await hub.Clients.Group($"match-{id}")
@@ -375,23 +375,45 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        if (m.CurrentQuarter < 4)
-            m.CurrentQuarter += 1;
+        var wasFinished = m.Status == "Finished";
+
+        if (m.Period < 4)
+        {
+            m.Period += 1;
+        }
         else
+        {
+            // Termina el partido → registra victoria si hay ganador (y aún no se registró)
+            if (!wasFinished)
+            {
+                await AddWinIfAppliesAsync(m);
+            }
             m.Status = "Finished";
+        }
 
         m.IsRunning = false;
         m.RemainingSeconds = 0;
-        m.QuarterEndsAtUtc = null;
+        m.PeriodEnd = null;
 
         await db.SaveChangesAsync();
 
         await hub.Clients.Group($"match-{id}")
-            .SendAsync("quarterChanged", new { quarter = m.CurrentQuarter });
+            .SendAsync("quarterChanged", new { quarter = m.Period });
         await hub.Clients.Group($"match-{id}")
             .SendAsync("buzzer", new { reason = "quarter-end" });
 
-        return Ok(new { quarter = m.CurrentQuarter });
+        if (m.Status == "Finished" && !wasFinished)
+        {
+            await hub.Clients.Group($"match-{id}")
+                .SendAsync("gameEnded", new
+                {
+                    home = m.HomeScore,
+                    away = m.AwayScore,
+                    winner = m.HomeScore == m.AwayScore ? "draw" : (m.HomeScore > m.AwayScore ? "home" : "away")
+                });
+        }
+
+        return Ok(new { quarter = m.Period });
     }
 
     [HttpPost("{id}/quarters/auto-advance")]
@@ -400,26 +422,36 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        var remaining = m.IsRunning && m.QuarterEndsAtUtc is not null
-            ? Math.Max(0, (int)Math.Ceiling((m.QuarterEndsAtUtc.Value - DateTime.UtcNow).TotalSeconds))
+        var remaining = m.IsRunning && m.PeriodEnd is not null
+            ? Math.Max(0, (int)Math.Ceiling((m.PeriodEnd.Value - DateTime.UtcNow).TotalSeconds))
             : m.RemainingSeconds;
 
         if (remaining > 0)
             return BadRequest("Quarter not finished");
 
-        if (m.CurrentQuarter < 4)
-            m.CurrentQuarter += 1;
+        var wasFinished = m.Status == "Finished";
+
+        if (m.Period < 4)
+        {
+            m.Period += 1;
+        }
         else
+        {
+            if (!wasFinished)
+            {
+                await AddWinIfAppliesAsync(m);
+            }
             m.Status = "Finished";
+        }
 
         m.IsRunning = false;
         m.RemainingSeconds = 0;
-        m.QuarterEndsAtUtc = null;
+        m.PeriodEnd = null;
 
         await db.SaveChangesAsync();
 
         await hub.Clients.Group($"match-{id}")
-            .SendAsync("quarterChanged", new { quarter = m.CurrentQuarter });
+            .SendAsync("quarterChanged", new { quarter = m.Period });
         await hub.Clients.Group($"match-{id}")
             .SendAsync("buzzer", new { reason = "quarter-end" });
 
@@ -434,6 +466,27 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub) : Con
                 });
         }
 
-        return Ok(new { quarter = m.CurrentQuarter });
+        return Ok(new { quarter = m.Period });
+    }
+
+    // ======== Helper: crea TeamWin si aplica (y no existe) ========
+    private async Task AddWinIfAppliesAsync(Match m)
+    {
+        if (m.HomeScore == m.AwayScore) return; // empate: sin victorias
+
+        var winnerTeamId = m.HomeScore > m.AwayScore ? m.HomeTeamId : m.AwayTeamId;
+
+        var exists = await db.TeamWins
+            .AnyAsync(tw => tw.MatchId == m.Id && tw.TeamId == winnerTeamId);
+
+        if (!exists)
+        {
+            db.TeamWins.Add(new TeamWin
+            {
+                TeamId = winnerTeamId,
+                MatchId = m.Id,
+                DateRegistered = DateTime.UtcNow
+            });
+        }
     }
 }
