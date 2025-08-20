@@ -1,6 +1,4 @@
-using System;
-
-namespace Scoreboard.Api.Domain.Entities;
+namespace Scoreboard.Api.Models.Entities;
 
 public class TeamWin
 {
@@ -9,9 +7,8 @@ public class TeamWin
     public int TeamId { get; set; }
     public int MatchId { get; set; }
 
-    public DateTime DateRegistered { get; set; } = DateTime.Now;
+    public DateTime DateRegistered { get; set; } = DateTime.UtcNow;
 
-    // Navegación (opcionales)
     public Team Team { get; set; } = null!;
     public Match Match { get; set; } = null!;
 }

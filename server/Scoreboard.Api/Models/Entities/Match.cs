@@ -1,4 +1,4 @@
-namespace Scoreboard.Api.Domain.Entities;
+namespace Scoreboard.Api.Models.Entities;
 
 public class Match
 {
@@ -15,17 +15,8 @@ public class Match
     public int HomeScore { get; set; }
     public int AwayScore { get; set; }
 
-    // 👇 Renombrado (antes CurrentQuarter)
-    public int Period { get; set; } = 1;      // 1..4
-
-    // 👇 Renombrados y/o eliminados de BD
-    // Se sacan del modelo persistente:
-    //  - IsRunning            (eliminado de BD)
-    //  - RemainingSeconds     (eliminado de BD)
-    //  - PeriodEnd            (eliminado de BD)
-    //  - StartMatch           (eliminado de BD)
-
-    // 👇 Renombrado (antes CreatedUtc)
+    // === Estado de juego mínimo en BD (sin runtime) ===
+    public int Period { get; set; } = 1;        // 1..4
     public DateTime DateMatch { get; set; } = DateTime.Now;
 
     // Navegación

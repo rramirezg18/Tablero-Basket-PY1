@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Scoreboard.Api.Domain.Entities;
 using Scoreboard.Api.Infrastructure;
+using Scoreboard.Api.Models.Entities; // <= Entities aquí
 
 namespace Scoreboard.Api.Controllers;
 
@@ -56,7 +56,7 @@ public class TeamsController(AppDbContext db) : ControllerBase
         });
     }
 
-    // DTOs para crear equipo con jugadores
+    // DTOs locales para crear equipo con jugadores (pueden quedarse aquí)
     public record PlayerItemDto(int? Number, string Name);
     public record CreateTeamDto(string Name, string? Color, List<PlayerItemDto>? Players);
 

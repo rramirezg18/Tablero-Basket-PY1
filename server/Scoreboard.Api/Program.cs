@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Scoreboard.Api.Infrastructure;
 using Scoreboard.Api.Hubs;
-using Scoreboard.Api.Domain.Entities;
+
+// ⬇️ Alias explícitos a Models.Entities
+using TeamEntity  = Scoreboard.Api.Models.Entities.Team;
+using MatchEntity = Scoreboard.Api.Models.Entities.Match;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +32,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// ✅ REGISTRA el store en memoria del reloj
+// 5) Runtime del reloj en memoria
 builder.Services.AddSingleton<IMatchRunTimeStore, MatchRunTimeStore>();
 
 var app = builder.Build();
@@ -48,7 +51,7 @@ app.MapControllers();
 app.MapHub<ScoreHub>("/hubs/score");
 app.MapFallbackToFile("/index.html");
 
-// Migraciones + seed mínimo
+// ===== Migraciones + seed mínimo =====
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -56,12 +59,13 @@ using (var scope = app.Services.CreateScope())
 
     if (!db.Teams.Any())
     {
-        var home = new Team { Name = "Locales", Color = "#0044FF" };
-        var away  = new Team { Name = "Visitantes", Color = "#FF3300" };
+        var home = new TeamEntity { Name = "Locales", Color = "#0044FF" };
+        var away = new TeamEntity { Name = "Visitantes", Color = "#FF3300" };
         db.AddRange(home, away);
         await db.SaveChangesAsync();
 
-        db.Matches.Add(new Match
+        // 👇 Usamos Set<MatchEntity>() para evitar cualquier choque de tipos
+        db.Set<MatchEntity>().Add(new MatchEntity
         {
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,

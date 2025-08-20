@@ -1,18 +1,23 @@
 using Microsoft.EntityFrameworkCore;
-using Scoreboard.Api.Domain.Entities;
+
+// ⬇️ Alias locales: TODOS apuntan a Models.Entities
+using Team      = Scoreboard.Api.Models.Entities.Team;
+using Player    = Scoreboard.Api.Models.Entities.Player;
+using Match     = Scoreboard.Api.Models.Entities.Match;
+using ScoreEvent= Scoreboard.Api.Models.Entities.ScoreEvent;
+using Foul      = Scoreboard.Api.Models.Entities.Foul;
+using TeamWin   = Scoreboard.Api.Models.Entities.TeamWin;
 
 namespace Scoreboard.Api.Infrastructure;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public DbSet<Team> Teams => Set<Team>();
-    public DbSet<Player> Players => Set<Player>();
-    public DbSet<Match> Matches => Set<Match>();
+    public DbSet<Team>       Teams       => Set<Team>();
+    public DbSet<Player>     Players     => Set<Player>();
+    public DbSet<Match>      Matches     => Set<Match>();
     public DbSet<ScoreEvent> ScoreEvents => Set<ScoreEvent>();
-    public DbSet<Foul> Fouls => Set<Foul>();
-
-    // 👇 NUEVO: victorias por equipo
-    public DbSet<TeamWin> TeamWins => Set<TeamWin>();
+    public DbSet<Foul>       Fouls       => Set<Foul>();
+    public DbSet<TeamWin>    TeamWins    => Set<TeamWin>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -52,7 +57,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(se => se.PlayerId).OnDelete(DeleteBehavior.NoAction);
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.MatchId);
-        // Renombrado: usamos DateRegister
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.DateRegister);
 
@@ -69,20 +73,15 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Foul>()
             .HasIndex(f => new { f.MatchId, f.TeamId });
 
-        // 👇 NUEVO: TeamWin
+        // TeamWin
         b.Entity<TeamWin>()
             .HasOne(tw => tw.Team).WithMany()
             .HasForeignKey(tw => tw.TeamId).OnDelete(DeleteBehavior.NoAction);
         b.Entity<TeamWin>()
             .HasOne(tw => tw.Match).WithMany()
             .HasForeignKey(tw => tw.MatchId).OnDelete(DeleteBehavior.Cascade);
-
-        // Evita duplicados para el mismo (Team, Match)
         b.Entity<TeamWin>()
-            .HasIndex(tw => new { tw.TeamId, tw.MatchId })
-            .IsUnique();
-
-        // Útil para standings
+            .HasIndex(tw => new { tw.TeamId, tw.MatchId }).IsUnique();
         b.Entity<TeamWin>()
             .HasIndex(tw => tw.TeamId);
 

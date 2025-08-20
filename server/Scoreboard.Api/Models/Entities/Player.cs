@@ -1,6 +1,4 @@
-using System;
-
-namespace Scoreboard.Api.Domain.Entities;
+namespace Scoreboard.Api.Models.Entities;
 
 public class Player
 {
@@ -8,7 +6,7 @@ public class Player
     public int TeamId { get; set; }
     public int? Number { get; set; }
     public string Name { get; set; } = null!;
-    public DateTime DateRegister { get; set; } = DateTime.Now; // antes CreatedUtc
+    public DateTime DateRegister { get; set; } = DateTime.Now;
 
     public Team Team { get; set; } = null!;
 }

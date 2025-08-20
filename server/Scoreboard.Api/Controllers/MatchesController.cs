@@ -1,9 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Scoreboard.Api.Domain.Entities;
 using Scoreboard.Api.Hubs;
 using Scoreboard.Api.Infrastructure;
+using Scoreboard.Api.Models.DTOs;        // DTOs aquí
+
+// 🔽 Alias de Entities para evitar cualquier choque de tipos
+using MatchEntity     = Scoreboard.Api.Models.Entities.Match;
+using TeamEntity      = Scoreboard.Api.Models.Entities.Team;
+using ScoreEventEntity= Scoreboard.Api.Models.Entities.ScoreEvent;
+using FoulEntity      = Scoreboard.Api.Models.Entities.Foul;
+using TeamWinEntity   = Scoreboard.Api.Models.Entities.TeamWin;
 
 namespace Scoreboard.Api.Controllers;
 
@@ -57,20 +64,18 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // NEW GAME (nombres libres)
     // ===========================
-    public record NewGameDto(string HomeName, string AwayName, int? QuarterDurationSeconds);
-
     [HttpPost("new")]
     public async Task<IActionResult> NewGame([FromBody] NewGameDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.HomeName) || string.IsNullOrWhiteSpace(dto.AwayName))
             return BadRequest("Team names required");
 
-        var home = new Team { Name = dto.HomeName.Trim() };
-        var away = new Team { Name = dto.AwayName.Trim() };
+        var home = new TeamEntity { Name = dto.HomeName.Trim() };
+        var away = new TeamEntity { Name = dto.AwayName.Trim() };
         db.AddRange(home, away);
         await db.SaveChangesAsync();
 
-        var match = new Match
+        var match = new MatchEntity
         {
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,
@@ -99,8 +104,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // NEW GAME BY TEAM IDs
     // ===========================
-    public record NewGameByTeamsDto(int HomeTeamId, int AwayTeamId, int? QuarterDurationSeconds);
-
     [HttpPost("new-by-teams")]
     public async Task<IActionResult> NewByTeams([FromBody] NewGameByTeamsDto dto)
     {
@@ -111,7 +114,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         var away = await db.Teams.FindAsync(dto.AwayTeamId);
         if (home is null || away is null) return BadRequest("Invalid team ids");
 
-        var match = new Match
+        var match = new MatchEntity
         {
             HomeTeamId = home.Id,
             AwayTeamId = away.Id,
@@ -140,8 +143,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // SCORE (+1/+2/+3)
     // ===========================
-    public record AddScoreDto(int TeamId, int Points);
-
     [HttpPost("{id}/score")]
     public async Task<IActionResult> AddScore(int id, [FromBody] AddScoreDto dto)
     {
@@ -154,7 +155,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         else if (dto.TeamId == m.AwayTeamId) m.AwayScore += dto.Points;
         else return BadRequest("Invalid teamId for this match");
 
-        db.ScoreEvents.Add(new ScoreEvent { MatchId = id, TeamId = dto.TeamId, Points = dto.Points, DateRegister = DateTime.Now });
+        db.ScoreEvents.Add(new ScoreEventEntity { MatchId = id, TeamId = dto.TeamId, Points = dto.Points, DateRegister = DateTime.Now });
         await db.SaveChangesAsync();
 
         await hub.Clients.Group($"match-{id}")
@@ -166,8 +167,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // SCORE (ajuste -1, etc.)
     // ===========================
-    public record AdjustScoreDto(int TeamId, int Delta);
-
     [HttpPost("{id}/score/adjust")]
     public async Task<IActionResult> AdjustScore(int id, [FromBody] AdjustScoreDto dto)
     {
@@ -178,7 +177,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         else if (dto.TeamId == m.AwayTeamId) m.AwayScore += dto.Delta;
         else return BadRequest("Invalid teamId for this match");
 
-        db.ScoreEvents.Add(new ScoreEvent { MatchId = id, TeamId = dto.TeamId, Points = dto.Delta, DateRegister = DateTime.Now });
+        db.ScoreEvents.Add(new ScoreEventEntity { MatchId = id, TeamId = dto.TeamId, Points = dto.Delta, DateRegister = DateTime.Now });
         await db.SaveChangesAsync();
 
         await hub.Clients.Group($"match-{id}")
@@ -190,8 +189,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // FOULS (sumar/restar)
     // ===========================
-    public record AddFoulDto(int TeamId, int? PlayerId, string? Type);
-
     [HttpPost("{id}/fouls")]
     public async Task<IActionResult> AddFoul(int id, [FromBody] AddFoulDto dto)
     {
@@ -201,7 +198,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         if (dto.TeamId != m.HomeTeamId && dto.TeamId != m.AwayTeamId)
             return BadRequest("Invalid teamId for this match");
 
-        db.Fouls.Add(new Foul
+        db.Fouls.Add(new FoulEntity
         {
             MatchId = id,
             TeamId = dto.TeamId,
@@ -220,8 +217,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         return Ok(new { homeFouls, awayFouls });
     }
 
-    public record AdjustFoulDto(int TeamId, int Delta);
-
     [HttpPost("{id}/fouls/adjust")]
     public async Task<IActionResult> AdjustFoul(int id, [FromBody] AdjustFoulDto dto)
     {
@@ -235,7 +230,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         {
             for (int i = 0; i < dto.Delta; i++)
             {
-                db.Fouls.Add(new Foul { MatchId = id, TeamId = dto.TeamId, DateRegister = DateTime.Now });
+                db.Fouls.Add(new FoulEntity { MatchId = id, TeamId = dto.TeamId, DateRegister = DateTime.Now });
             }
         }
         else if (dto.Delta < 0)
@@ -266,7 +261,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
     // ===========================
     // TIMER (runtime, no BD)
     // ===========================
-    public record StartTimerDto(int? QuarterDurationSeconds);
+    public record StartTimerDto(int? QuarterDurationSeconds); // este DTO puede vivir aquí
 
     [HttpPost("{id}/timer/start")]
     public async Task<IActionResult> StartTimer(int id, [FromBody] StartTimerDto? dto)
@@ -370,7 +365,6 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         return Ok(new { quarter = m.Period });
     }
 
-
     [HttpPost("{id}/quarters/auto-advance")]
     public async Task<IActionResult> AutoAdvanceQuarter(int id)
     {
@@ -411,11 +405,10 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         return Ok(new { quarter = m.Period });
     }
 
-
     // ===========================
-// PRIVADO: registrar TeamWin si el partido terminó y no es empate
-// ===========================
-    private async Task RecordWinIfFinishedAsync(Match m)
+    // PRIVADO: registrar TeamWin si el partido terminó y no es empate
+    // ===========================
+    private async Task RecordWinIfFinishedAsync(MatchEntity m)
     {
         if (m.Status != "Finished") return;
 
@@ -428,17 +421,13 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         var exists = await db.TeamWins.AnyAsync(tw => tw.TeamId == winnerTeamId && tw.MatchId == m.Id);
         if (!exists)
         {
-            db.TeamWins.Add(new TeamWin
+            db.TeamWins.Add(new TeamWinEntity
             {
                 TeamId = winnerTeamId,
                 MatchId = m.Id,
                 DateRegistered = DateTime.UtcNow
             });
-            // Ojo: este SaveChangesAsync NO es obligatorio aquí si ya llamas a SaveChanges afuera,
-            // pero mantenerlo es seguro si prefieres persistir inmediatamente:
-            // await db.SaveChangesAsync();
+            // Persistirá con el SaveChanges del flujo superior.
         }
     }
-
-
 }
