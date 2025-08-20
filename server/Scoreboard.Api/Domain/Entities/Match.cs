@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Scoreboard.Api.Domain.Entities;
 
 public class Match
@@ -18,15 +15,18 @@ public class Match
     public int HomeScore { get; set; }
     public int AwayScore { get; set; }
 
-    // ===== Estado del reloj/período ahora en Match =====
-    public int Period { get; set; } = 1;           // 1..4 (antes CurrentQuarter)
-    public bool IsRunning { get; set; } = false;
-    public int RemainingSeconds { get; set; } = 0;
-    public DateTime? PeriodEnd { get; set; }       // antes QuarterEndsAtUtc
+    // 👇 Renombrado (antes CurrentQuarter)
+    public int Period { get; set; } = 1;      // 1..4
 
-    // Metadatos existentes (renombrados)
-    public DateTime? StartMatch { get; set; }      // antes StartTimeUtc
-    public DateTime DateMatch { get; set; } = DateTime.UtcNow; // antes CreatedUtc
+    // 👇 Renombrados y/o eliminados de BD
+    // Se sacan del modelo persistente:
+    //  - IsRunning            (eliminado de BD)
+    //  - RemainingSeconds     (eliminado de BD)
+    //  - PeriodEnd            (eliminado de BD)
+    //  - StartMatch           (eliminado de BD)
+
+    // 👇 Renombrado (antes CreatedUtc)
+    public DateTime DateMatch { get; set; } = DateTime.Now;
 
     // Navegación
     public Team HomeTeam { get; set; } = null!;

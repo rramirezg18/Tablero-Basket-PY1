@@ -29,9 +29,11 @@ builder.Services.AddCors(options =>
     });
 });
 
+// ✅ REGISTRA el store en memoria del reloj
+builder.Services.AddSingleton<IMatchRunTimeStore, MatchRunTimeStore>();
+
 var app = builder.Build();
 
-// 5) Swagger en desarrollo
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -39,16 +41,11 @@ if (app.Environment.IsDevelopment())
     app.UseCors("DevCors");
 }
 
-// 6) Archivos estáticos (wwwroot)
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapControllers();
-
-// 7) SignalR hub
 app.MapHub<ScoreHub>("/hubs/score");
-
-// 8) SPA Fallback
 app.MapFallbackToFile("/index.html");
 
 // Migraciones + seed mínimo
@@ -72,15 +69,8 @@ using (var scope = app.Services.CreateScope())
             QuarterDurationSeconds = 600,
             HomeScore = 0,
             AwayScore = 0,
-
-            // Estado de período inicial
             Period = 1,
-            IsRunning = false,
-            RemainingSeconds = 0,
-            PeriodEnd = null,
-
-            StartMatch = null,
-            DateMatch = DateTime.UtcNow
+            DateMatch = DateTime.Now
         });
         await db.SaveChangesAsync();
     }

@@ -9,7 +9,7 @@ public class TeamWin
     public int TeamId { get; set; }
     public int MatchId { get; set; }
 
-    public DateTime DateRegistered { get; set; } = DateTime.UtcNow;
+    public DateTime DateRegistered { get; set; } = DateTime.Now;
 
     // Navegación (opcionales)
     public Team Team { get; set; } = null!;

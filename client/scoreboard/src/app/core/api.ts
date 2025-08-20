@@ -55,4 +55,13 @@ export class ApiService {
   createTeam(body: { name: string; color?: string; players: { number?: number; name: string }[] }) {
     return this.http.post('/api/teams', body);
   }
+
+  getStandings() {
+    return this.http.get<Array<{ id: number; name: string; color?: string; wins: number }>>(
+      `${this.base}/standings`
+    );
+  }
+
+
+
 }

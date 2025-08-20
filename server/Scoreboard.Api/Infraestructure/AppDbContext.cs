@@ -11,7 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ScoreEvent> ScoreEvents => Set<ScoreEvent>();
     public DbSet<Foul> Fouls => Set<Foul>();
 
-    // ✅ NUEVO: victorias por equipo/partido
+    // 👇 NUEVO: victorias por equipo
     public DbSet<TeamWin> TeamWins => Set<TeamWin>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -52,6 +52,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(se => se.PlayerId).OnDelete(DeleteBehavior.NoAction);
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.MatchId);
+        // Renombrado: usamos DateRegister
         b.Entity<ScoreEvent>()
             .HasIndex(se => se.DateRegister);
 
@@ -68,16 +69,22 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         b.Entity<Foul>()
             .HasIndex(f => new { f.MatchId, f.TeamId });
 
-        // ✅ TeamWin (victorias): 1 fila por (TeamId, MatchId)
-        b.Entity<TeamWin>()
-            .HasIndex(tw => new { tw.TeamId, tw.MatchId })
-            .IsUnique();
+        // 👇 NUEVO: TeamWin
         b.Entity<TeamWin>()
             .HasOne(tw => tw.Team).WithMany()
             .HasForeignKey(tw => tw.TeamId).OnDelete(DeleteBehavior.NoAction);
         b.Entity<TeamWin>()
             .HasOne(tw => tw.Match).WithMany()
             .HasForeignKey(tw => tw.MatchId).OnDelete(DeleteBehavior.Cascade);
+
+        // Evita duplicados para el mismo (Team, Match)
+        b.Entity<TeamWin>()
+            .HasIndex(tw => new { tw.TeamId, tw.MatchId })
+            .IsUnique();
+
+        // Útil para standings
+        b.Entity<TeamWin>()
+            .HasIndex(tw => tw.TeamId);
 
         base.OnModelCreating(b);
     }

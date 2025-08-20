@@ -6,6 +6,8 @@ import { map } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
+import { StandingsDialogComponent } from '../../standings/standings-dialog';
+
 
 import { ApiService } from '../../../core/api';
 import { RealtimeService } from '../../../core/realtime';
@@ -303,4 +305,25 @@ export class ControlPanelComponent implements OnDestroy {
                                    `¡Ganó ${this.awayName}! ${away} - ${home}`;
     await Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
   }
+
+  showStandings() {
+    this.api.getStandings().subscribe({
+      next: (rows) => {
+        this.dialog.open(StandingsDialogComponent, {
+          width: '520px',
+          data: { rows }
+        });
+      },
+      error: (e) => {
+        console.error('getStandings error', e);
+        // Si usas SweetAlert:
+        // Swal.fire({ icon: 'error', title: 'Error cargando standings', text: e?.error ?? e?.message ?? 'Unknown error' });
+      }
+    });
+  }
+
+
+
+
+
 }

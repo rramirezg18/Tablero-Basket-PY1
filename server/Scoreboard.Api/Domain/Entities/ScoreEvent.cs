@@ -13,7 +13,7 @@ public class ScoreEvent
     public int Points { get; set; }
 
     public string? Note { get; set; }
-    public DateTime DateRegister { get; set; } = DateTime.UtcNow; // antes CreatedUtc
+    public DateTime DateRegister { get; set; } = DateTime.Now; // antes CreatedUtc
 
     public Match Match { get; set; } = null!;
     public Team Team { get; set; } = null!;
