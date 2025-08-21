@@ -1,12 +1,13 @@
-/* ====== Paleta y base ====== */
+
 :root {
   --bg: #0b0b0b;
   --bezel: #ffffff;
   --led-yellow: #ffd54a;
   --led-green: #46ff6b;
   --led-red: #ff4d4d;
-  --dot: 7px; /* tamaño del “punto” LED */
+  --dot: 7px; 
 }
+
 .board {
   min-height: 100vh;
   background: var(--bg);
@@ -14,25 +15,32 @@
   display: grid;
   grid-template-rows: auto 1fr;
   padding: 24px;
+  overflow-x: hidden; 
 }
 
-/* ====== TOP ====== */
+
 .top {
   display: grid;
-  grid-template-columns: 1fr minmax(420px, 820px) 1fr;
+  grid-template-columns: 1fr auto 1fr;   
   align-items: center;
   gap: 24px;
 }
+
 .fouls {
-  justify-self: start;
-  &.right { justify-self: end; }
+  justify-self: center;
+  min-width: 60px;
+  text-align: center;
+}
+.fouls.right {
+  justify-self: center;
 }
 
-/* Bezel (marco blanco) del timer */
+
 .timer-wrap {
   display: grid;
   place-items: center;
 }
+
 .timer-bezel {
   width: min(95vw, 920px);
   border: 10px solid var(--bezel);
@@ -42,44 +50,69 @@
   background: #111;
 }
 
-/* ====== MIDDLE ====== */
+
 .middle {
   margin-top: 24px;
   display: grid;
-  grid-template-columns: 1fr minmax(260px, 360px) 1fr;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 24px;
 }
 
 .score-box {
+  flex: 1;
+  min-width: 140px;
   border: 6px solid #ddd;
   border-radius: 8px;
-  padding: clamp(8px, 1.5vw, 16px);
+  padding: clamp(8px, 1.8vw, 18px); 
   background: #111;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;   
+  overflow: hidden;     
 }
 
-/* Centro: POS + PERIOD */
-.center {
-  display: grid;
-  gap: 12px;
-  justify-items: center;
+.team-score {
+  font-size: clamp(2rem, 9vw, 5rem); 
+  line-height: 1;       
+  white-space: nowrap;  
 }
+
+.score-box.left,
+.score-box.right {
+  justify-self: stretch;
+}
+
+/* Centro */
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
 .pos {
   display: flex;
   align-items: center;
   gap: 10px;
-  .pos-text {
-    font: 800 clamp(22px, 3vw, 34px)/1 "Impact", system-ui, sans-serif;
-    letter-spacing: 0.02em;
-  }
-  .arrow {
-    font-size: clamp(22px, 3.2vw, 36px);
-    color: #e33;
-    &.active { filter: drop-shadow(0 0 6px #e33); }
-  }
 }
 
-/* ====== Utilidad: efecto LED punteado ====== */
+.pos .pos-text {
+  font: 800 clamp(18px, 2.5vw, 28px)/1 "Impact", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.pos .arrow {
+  font-size: clamp(20px, 2.5vw, 30px);
+  color: #e33;
+}
+.pos .arrow.active {
+  filter: drop-shadow(0 0 6px #e33);
+}
+
+
 .led {
   --glow: currentColor;
   color: transparent;
@@ -93,9 +126,89 @@
 .led-green  { color: var(--led-green);  --glow: #46ff6b; }
 .led-red    { color: var(--led-red);    --glow: #ff4d4d; }
 
-/* Responsive tweaks */
+
+@media (max-width: 1024px) {
+  .board { padding: 16px; }
+  .timer-bezel { width: min(95vw, 680px); }
+
+  .middle { 
+    grid-template-columns: 1fr 1fr;  
+    grid-template-rows: auto auto;   
+    gap: 16px;
+  }
+
+  .score-box:first-child { grid-column: 1; grid-row: 1; }
+  .score-box:last-child  { grid-column: 2; grid-row: 1; }
+
+  .center {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    flex-direction: column;
+    align-items: center;
+  }
+}
+
+/* Tablet vertical */
 @media (max-width: 900px) {
-  .top { grid-template-columns: 1fr; gap: 12px; }
-  .fouls { justify-self: center; }
-  .middle { grid-template-columns: 1fr; }
+  .top {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+  }
+  .middle { 
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}
+
+/* Celulares */
+@media (max-width: 720px) {
+  .board {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .top {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+  }
+
+  .fouls {
+    font-size: 1rem;
+    margin-bottom: 2px;
+  }
+
+  .timer-bezel {
+    width: 100%;
+    border-width: 4px;
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .clock {
+    font-size: clamp(1.5rem, 6vw, 2rem) !important;
+  }
+
+  .middle {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .score-box {
+    width: 100%;
+    padding: 6px;
+    border-width: 3px;
+    font-size: 0.9rem;
+  }
+
+  .team-score {
+    font-size: clamp(1.8rem, 8vw, 3rem) !important; 
+    line-height: 1.1;
+  }
+
+  .pos {
+    flex-direction: column;
+  }
+  .pos .pos-text {
+    font-size: 0.9rem !important;
+  }
 }
