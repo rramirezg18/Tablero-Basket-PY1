@@ -52,24 +52,24 @@ La aplicación consume la API desarrollada en ASP.NET Core (ubicada en `server/S
 ##  Estructura del Proyecto
 
 El frontend está en:
-├── public/                 # Archivos estáticos (favicon, logos, etc.)
-├── src/
-│   ├── app/
-│   │   ├── components/     # Componentes reutilizables
-│   │   ├── pages/          # Vistas principales (equipos, partidos, marcador)
-│   │   ├── services/       # Servicios API/SignalR
-│   │   ├── models/         # Interfaces y tipado TS
-│   │   ├── guards/         # Guards para rutas
-│   │   ├── pipes/          # Pipes personalizados
-│   │   └── app.module.ts   # Módulo raíz
-│   ├── assets/             # Imágenes, JSON, CSS globales
-│   ├── environments/       # Configuración de entornos
-│   ├── main.ts             # Punto de arranque
-│   └── styles.css          # Estilos globales
-├── angular.json            # Configuración Angular CLI
-├── package.json            # Dependencias del frontend
-├── proxy.conf.json         # Proxy para llamadas API
-└── tsconfig.json           # Configuración TypeScript
+public/                  // Archivos estáticos (favicon, logos, etc.)
+src/
+ └── app/
+     ├── components/     // Componentes reutilizables
+     ├── pages/          // Vistas principales (equipos, partidos, marcador)
+     ├── services/       // Servicios API/SignalR
+     ├── models/         // Interfaces y tipado TS
+     ├── guards/         // Guards para rutas
+     ├── pipes/          // Pipes personalizados
+     └── app.module.ts   // Módulo raíz
+ ├── assets/             // Imágenes, JSON, CSS globales
+ ├── environments/       // Configuración de entornos
+ ├── main.ts             // Punto de arranque
+ ├── styles.css          // Estilos globales
+ ├── angular.json        // Configuración Angular CLI
+ ├── package.json        // Dependencias del frontend
+ ├── proxy.conf.json     // Proxy para llamadas API
+ └── tsconfig.json       // Configuración TypeScript
 ---
 
 ##  Instalación y Configuración
@@ -200,3 +200,4 @@ Definido en `app-routing.module.ts`.
 - **Bootstrap Grid System** para diseño responsivo.
 - Preparación para Lazy Loading en módulos.
 - **Encapsulación de estilos** por componente para evitar conflictos globales.
+
