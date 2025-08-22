@@ -52,6 +52,7 @@ La aplicación consume la API desarrollada en ASP.NET Core (ubicada en `server/S
 ##  Estructura del Proyecto
 
 El frontend está en:
+```
 public/                  // Archivos estáticos (favicon, logos, etc.)
 src/
  └── app/
@@ -70,6 +71,7 @@ src/
  ├── package.json        // Dependencias del frontend
  ├── proxy.conf.json     // Proxy para llamadas API
  └── tsconfig.json       // Configuración TypeScript
+ ```
 ---
 
 ##  Instalación y Configuración
@@ -200,4 +202,5 @@ Definido en `app-routing.module.ts`.
 - **Bootstrap Grid System** para diseño responsivo.
 - Preparación para Lazy Loading en módulos.
 - **Encapsulación de estilos** por componente para evitar conflictos globales.
+
 
