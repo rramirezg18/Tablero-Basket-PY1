@@ -25,8 +25,8 @@ export class ScoreboardComponent {
 
   matchId = computed(() => Number(this.route.snapshot.paramMap.get('id') ?? '1'));
 
-  homeName = 'A TEAM';
-  awayName = 'B TEAM';
+  nombreLocal = 'A TEAM';
+  nombreVisitante = 'B TEAM';
 
   constructor() {
     effect(() => {
@@ -35,8 +35,8 @@ export class ScoreboardComponent {
       const text = over.winner === 'draw'
         ? `Empate ${over.home} - ${over.away}`
         : over.winner === 'home'
-          ? `¡Ganó ${this.homeName}! ${over.home} - ${over.away}`
-          : `¡Ganó ${this.awayName}! ${over.away} - ${over.home}`;
+          ? `¡Ganó ${this.nombreLocal}! ${over.home} - ${over.away}`
+          : `¡Ganó ${this.nombreVisitante}! ${over.away} - ${over.home}`;
       Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
     });
   }
@@ -45,8 +45,8 @@ export class ScoreboardComponent {
     this.api.obtenerPartido(this.matchId()).subscribe({
       next: (m: any) => {
         this.realtime.score.set({ home: m.puntajeLocal, away: m.puntajeVisitante });
-        this.homeName = m.equipoLocal || 'A TEAM';
-        this.awayName = m.equipoVisitante || 'B TEAM';
+        this.nombreLocal = m.equipoLocal || 'A TEAM';
+        this.nombreVisitante = m.equipoVisitante || 'B TEAM';
         this.realtime.hydrateTimerFromSnapshot(m.timer);
         this.realtime.hydrateFoulsFromSnapshot({ home: m.faltasLocal, away: m.faltasVisitante });
       }
@@ -62,3 +62,4 @@ export class ScoreboardComponent {
     }
   }
 }
+
