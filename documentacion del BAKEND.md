@@ -40,6 +40,7 @@ El despliegue y ejecución se gestiona con Docker Compose para simplificar la in
  
 ### estructura del bakend de nuestro proyecto 
 
+```
 server/Scoreboard.Api
  ├── Controllers/        # Define los endpoints (Teams, Matches, Scoreboard)
  ├── Data/               # DbContext y Repositorios (Entity Framework Core)
@@ -49,7 +50,7 @@ server/Scoreboard.Api
  ├── Program.cs          # Punto de entrada, configuración inicial
  ├── appsettings.json    # Configuración (conexiones, logs, etc.)
  └── Properties/         # Configuración del proyecto
-
+```
 
 ---
 
@@ -208,3 +209,4 @@ Ejemplo:
 - Todo está orquestado con Docker Compose (contenedor para la API y contenedor para la base de datos).  
 
 ---
+
