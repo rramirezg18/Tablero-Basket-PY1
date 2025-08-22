@@ -146,10 +146,13 @@ export class ControlPanelComponent implements OnDestroy {
   // === Reintento para oficializar fin de cuarto en backend ===
   private tryAutoAdvance(retry = 0) {
     const id = this.matchId();
+    const prevQuarter = this.rt.quarter();
     this.api.autoAdvanceQuarter(id).subscribe({
       next: (res: any) => {
-        // el backend ya subió el cuarto; el que terminó es (nuevo - 1)
-        const ended = (res?.quarter ?? this.rt.quarter()) - 1;
+        // Si el backend avanzó de periodo, res.quarter será el nuevo.
+        // Caso contrario (partido finalizado), usamos el actual.
+        const q = res?.quarter ?? prevQuarter;
+        const ended = q > prevQuarter ? q - 1 : q;
         this.showQuarterEndAlert(ended); // buzzer llega por SignalR
       },
       error: (e) => {
