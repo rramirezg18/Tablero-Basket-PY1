@@ -13,7 +13,7 @@ import { ApiService } from '../../../core/api';
 import { RealtimeService } from '../../../core/realtime';
 
 // Diálogos
-import { NewGameDialogComponent } from '../../matches/new-game-dialog';
+import { NuevoPartidoDialogComponent } from '../../matches/new-game-dialog';
 import { RegisterTeamDialogComponent } from '../../teams/register-team-dialog';
 
 type Possession = 'none' | 'home' | 'away';
@@ -37,22 +37,22 @@ export class ControlPanelComponent implements OnDestroy {
   matchId = toSignal(this.route.paramMap.pipe(map(p => Number(p.get('id') ?? '1'))), { initialValue: 1 });
 
   // Datos del partido
-  homeTeamId?: number;
-  awayTeamId?: number;
-  homeName = 'HOME';
-  awayName = 'AWAY';
+  equipoLocalId?: number;
+  equipoVisitanteId?: number;
+  nombreLocal = 'HOME';
+  nombreVisitante = 'AWAY';
 
   // Cuarto real desde RealtimeService
   period = computed(() => this.rt.quarter());
 
   // UI local
   possession = signal<Possession>('none');
-  homeScore = signal(0);
-  awayScore = signal(0);
+  puntajeLocal = signal(0);
+  puntajeVisitante = signal(0);
 
   // Faltas desde RealtimeService
-  homeFouls = computed(() => this.rt.fouls().home);
-  awayFouls = computed(() => this.rt.fouls().away);
+  faltasLocal = computed(() => this.rt.fouls().home);
+  faltasVisitante = computed(() => this.rt.fouls().away);
 
   // Sólo se puede anotar cuando corre el timer
   canScore = computed(() => this.rt.timerRunning());
@@ -74,8 +74,8 @@ export class ControlPanelComponent implements OnDestroy {
     // Sincroniza marcador local
     effect(() => {
       const s = this.rt.score();
-      this.homeScore.set(s.home);
-      this.awayScore.set(s.away);
+      this.puntajeLocal.set(s.home);
+      this.puntajeVisitante.set(s.away);
     });
 
     // Fin de partido → SweetAlert con resultado
@@ -107,22 +107,22 @@ export class ControlPanelComponent implements OnDestroy {
       const id = this.matchId();
       if (!id) return;
 
-      this.api.getMatch(id).subscribe({
+      this.api.obtenerPartido(id).subscribe({
         next: (m: any) => {
-          this.homeTeamId = m.homeTeamId;
-          this.awayTeamId = m.awayTeamId;
-          this.homeName = m.homeTeam ?? 'HOME';
-          this.awayName = m.awayTeam ?? 'AWAY';
-          this.homeScore.set(m.homeScore ?? 0);
-          this.awayScore.set(m.awayScore ?? 0);
+          this.equipoLocalId = m.equipoLocalId;
+          this.equipoVisitanteId = m.equipoVisitanteId;
+          this.nombreLocal = m.equipoLocal ?? 'HOME';
+          this.nombreVisitante = m.equipoVisitante ?? 'AWAY';
+          this.puntajeLocal.set(m.puntajeLocal ?? 0);
+          this.puntajeVisitante.set(m.puntajeVisitante ?? 0);
 
-          if (typeof m.quarter === 'number') this.rt.quarter.set(m.quarter);
-          if (m.timer) this.rt.hydrateTimerFromSnapshot({ ...m.timer, quarter: m.quarter });
+          if (typeof m.periodo === 'number') this.rt.quarter.set(m.periodo);
+          if (m.timer) this.rt.hydrateTimerFromSnapshot({ ...m.timer, quarter: m.periodo });
 
           // hidratar faltas si el GET las trae (opcional)
-          if (m.fouls) this.rt.hydrateFoulsFromSnapshot(m.fouls);
+          this.rt.hydrateFoulsFromSnapshot({ home: m.faltasLocal, away: m.faltasVisitante });
         },
-        error: (e) => console.error('getMatch error', e)
+        error: (e) => console.error('obtenerPartido error', e)
       });
 
       let disposed = false;
@@ -166,32 +166,32 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   // === Flujo antiguo (manual por nombres)
-  newGame() {
-    const home = (prompt('Nombre equipo local:', this.homeName) ?? '').trim();
+  nuevoPartido() {
+    const home = (prompt('Nombre equipo local:', this.nombreLocal) ?? '').trim();
     if (!home) return;
-    const away = (prompt('Nombre equipo visitante:', this.awayName) ?? '').trim();
+    const away = (prompt('Nombre equipo visitante:', this.nombreVisitante) ?? '').trim();
     if (!away) return;
     const mins = Number(prompt('Duración del período (minutos):', '10') ?? '10');
     const qsec = Number.isFinite(mins) && mins > 0 ? Math.round(mins * 60) : 600;
 
-    this.api.newGame({ homeName: home, awayName: away, quarterDurationSeconds: qsec })
-      .subscribe({ next: (res: any) => this.router.navigate(['/control', res.matchId]) });
+    this.api.nuevoPartido({ nombreLocal: home, nombreVisitante: away, duracionPeriodoSegundos: qsec })
+      .subscribe({ next: (res: any) => this.router.navigate(['/control', res.partidoId]) });
   }
 
   // === Puntos
   add(teamId: number | undefined, points: 1 | 2 | 3) {
     if (!teamId || !this.canScore()) return;
-    this.api.createScore(this.matchId(), { teamId, points }).subscribe();
+    this.api.crearPuntaje(this.matchId(), { teamId, points }).subscribe();
   }
   minus1(teamId: number | undefined) {
     if (!teamId || !this.canScore()) return;
-    this.api.adjustScore(this.matchId(), { teamId, delta: -1 }).subscribe();
+    this.api.ajustarPuntaje(this.matchId(), { teamId, delta: -1 }).subscribe();
   }
 
   // === Faltas
   foul(teamId: number | undefined, delta: 1 | -1) {
     if (!teamId) return;
-    this.api.adjustFoul(this.matchId(), { teamId, delta }).subscribe();
+    this.api.ajustarFalta(this.matchId(), { teamId, delta }).subscribe();
   }
 
   // === Timer
@@ -276,15 +276,15 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   // Nuevo partido con equipos registrados
-  newGameFromRegistered() {
-    const ref = this.dialog.open(NewGameDialogComponent, {
+  nuevoPartidoDesdeRegistrados() {
+    const ref = this.dialog.open(NuevoPartidoDialogComponent, {
       width: '520px',
       disableClose: true
     });
     ref.afterClosed().subscribe(result => {
       if (!result) return;
-      this.api.newGameByTeams(result).subscribe({
-        next: (res: any) => this.router.navigate(['/control', res.matchId]),
+      this.api.nuevoPartidoPorEquipos(result).subscribe({
+        next: (res: any) => this.router.navigate(['/control', res.partidoId]),
         error: async (e) => {
           await Swal.fire({ icon: 'error', title: 'Error creating match', text: e?.error ?? e?.message ?? 'Unknown error' });
         }
@@ -306,8 +306,8 @@ export class ControlPanelComponent implements OnDestroy {
   private async showGameEndAlert(home: number, away: number, winner: 'home'|'away'|'draw') {
     if (!isPlatformBrowser(this.platformId)) return;
     let text = winner === 'draw' ? `Empate ${home} - ${away}` :
-               winner === 'home' ? `¡Ganó ${this.homeName}! ${home} - ${away}` :
-                                   `¡Ganó ${this.awayName}! ${away} - ${home}`;
+               winner === 'home' ? `¡Ganó ${this.nombreLocal}! ${home} - ${away}` :
+                                   `¡Ganó ${this.nombreVisitante}! ${away} - ${home}`;
     await Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
   }
 

@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ApiService } from '../../core/api';
 
 @Component({
-  selector: 'app-new-game-dialog',
+  selector: 'app-nuevo-partido-dialog',
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule,
@@ -20,24 +20,24 @@ import { ApiService } from '../../core/api';
   templateUrl: './new-game-dialog.html',
   styleUrls: ['./new-game-dialog.scss']
 })
-export class NewGameDialogComponent {
+export class NuevoPartidoDialogComponent {
   private fb = inject(FormBuilder);
   private api = inject(ApiService);
-  private dialogRef = inject(MatDialogRef<NewGameDialogComponent, any>);
+  private dialogRef = inject(MatDialogRef<NuevoPartidoDialogComponent, any>);
 
-  teams: Array<{ id: number; name: string }> = [];
+  equipos: Array<{ id: number; nombre: string }> = [];
   loading = true;
 
   form = this.fb.group({
-    homeTeamId: [null as number | null, Validators.required],
-    awayTeamId: [null as number | null, Validators.required],
-    minutes: [10, [Validators.required, Validators.min(1)]]
+    equipoLocalId: [null as number | null, Validators.required],
+    equipoVisitanteId: [null as number | null, Validators.required],
+    minutos: [10, [Validators.required, Validators.min(1)]]
   });
 
   ngOnInit() {
-    this.api.listTeams().subscribe({
+    this.api.listarEquipos().subscribe({
       next: (ts: any[]) => {
-        this.teams = [...ts].sort((a, b) => a.name.localeCompare(b.name));
+        this.equipos = [...ts].sort((a, b) => a.nombre.localeCompare(b.nombre));
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -45,21 +45,21 @@ export class NewGameDialogComponent {
   }
 
   swap() {
-    const home = this.form.value.homeTeamId;
-    const away = this.form.value.awayTeamId;
-    this.form.patchValue({ homeTeamId: away, awayTeamId: home });
+    const home = this.form.value.equipoLocalId;
+    const away = this.form.value.equipoVisitanteId;
+    this.form.patchValue({ equipoLocalId: away, equipoVisitanteId: home });
   }
 
   cancel() { this.dialogRef.close(); }
 
   save() {
     if (this.form.invalid) return;
-    const { homeTeamId, awayTeamId, minutes } = this.form.value;
-    if (homeTeamId === awayTeamId) return;
+    const { equipoLocalId, equipoVisitanteId, minutos } = this.form.value;
+    if (equipoLocalId === equipoVisitanteId) return;
     this.dialogRef.close({
-      homeTeamId,
-      awayTeamId,
-      quarterDurationSeconds: Math.round(Number(minutes) * 60)
+      equipoLocalId,
+      equipoVisitanteId,
+      duracionPeriodoSegundos: Math.round(Number(minutos) * 60)
     });
   }
 }

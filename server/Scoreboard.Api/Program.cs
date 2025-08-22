@@ -3,8 +3,8 @@ using Scoreboard.Api.Infrastructure;
 using Scoreboard.Api.Hubs;
 
 // ⬇️ Alias explícitos a Models.Entities
-using TeamEntity  = Scoreboard.Api.Models.Entities.Team;
-using MatchEntity = Scoreboard.Api.Models.Entities.Match;
+using EquipoEntity  = Scoreboard.Api.Models.Entities.Equipo;
+using PartidoEntity = Scoreboard.Api.Models.Entities.Partido;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,24 +57,24 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 
-    if (!db.Teams.Any())
+    if (!db.Equipos.Any())
     {
-        var home = new TeamEntity { Name = "Locales", Color = "#0044FF" };
-        var away = new TeamEntity { Name = "Visitantes", Color = "#FF3300" };
+        var home = new EquipoEntity { Nombre = "Locales", Color = "#0044FF" };
+        var away = new EquipoEntity { Nombre = "Visitantes", Color = "#FF3300" };
         db.AddRange(home, away);
         await db.SaveChangesAsync();
 
-        // 👇 Usamos Set<MatchEntity>() para evitar cualquier choque de tipos
-        db.Set<MatchEntity>().Add(new MatchEntity
+        // 👇 Usamos Set<PartidoEntity>() para evitar cualquier choque de tipos
+        db.Set<PartidoEntity>().Add(new PartidoEntity
         {
-            HomeTeamId = home.Id,
-            AwayTeamId = away.Id,
-            Status = "Scheduled",
-            QuarterDurationSeconds = 600,
-            HomeScore = 0,
-            AwayScore = 0,
-            Period = 1,
-            DateMatch = DateTime.Now
+            EquipoLocalId = home.Id,
+            EquipoVisitanteId = away.Id,
+            Estado = "Programado",
+            DuracionPeriodoSegundos = 600,
+            PuntajeLocal = 0,
+            PuntajeVisitante = 0,
+            Periodo = 1,
+            FechaPartido = DateTime.Now
         });
         await db.SaveChangesAsync();
     }
