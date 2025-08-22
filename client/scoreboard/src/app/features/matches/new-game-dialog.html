@@ -1,43 +1,43 @@
-<h2 mat-dialog-title>New Game</h2>
+<h2 mat-dialog-title>Nuevo Partido</h2>
 
 <div mat-dialog-content class="dialog-content" *ngIf="!loading; else loadingTpl">
   <div class="row">
     <mat-form-field appearance="outline" class="grow">
-      <mat-label>Home Team</mat-label>
-      <mat-select [formControl]="form.controls.homeTeamId">
-        <mat-option *ngFor="let t of teams" [value]="t.id">{{ t.name }}</mat-option>
+      <mat-label>Equipo Local</mat-label>
+      <mat-select [formControl]="form.controls.equipoLocalId">
+        <mat-option *ngFor="let t of equipos" [value]="t.id">{{ t.nombre }}</mat-option>
       </mat-select>
     </mat-form-field>
 
-    <button mat-icon-button class="swap" (click)="swap()" aria-label="Swap teams">
+    <button mat-icon-button class="swap" (click)="swap()" aria-label="Intercambiar equipos">
       <mat-icon>swap_horiz</mat-icon>
     </button>
 
     <mat-form-field appearance="outline" class="grow">
-      <mat-label>Away Team</mat-label>
-      <mat-select [formControl]="form.controls.awayTeamId">
-        <mat-option *ngFor="let t of teams" [value]="t.id">{{ t.name }}</mat-option>
+      <mat-label>Equipo Visitante</mat-label>
+      <mat-select [formControl]="form.controls.equipoVisitanteId">
+        <mat-option *ngFor="let t of equipos" [value]="t.id">{{ t.nombre }}</mat-option>
       </mat-select>
     </mat-form-field>
   </div>
 
   <mat-form-field appearance="outline" class="mins">
-    <mat-label>Minutes per quarter</mat-label>
-    <input matInput type="number" min="1" [formControl]="form.controls.minutes" />
+    <mat-label>Minutos por periodo</mat-label>
+    <input matInput type="number" min="1" [formControl]="form.controls.minutos" />
   </mat-form-field>
 
-  <div class="hint" *ngIf="form.value.homeTeamId && form.value.awayTeamId && form.value.homeTeamId===form.value.awayTeamId">
-    Home and Away must be different teams
+  <div class="hint" *ngIf="form.value.equipoLocalId && form.value.equipoVisitanteId && form.value.equipoLocalId===form.value.equipoVisitanteId">
+    El local y el visitante deben ser equipos diferentes
   </div>
 </div>
 
 <ng-template #loadingTpl>
-  <div style="min-width: 420px; padding: 16px 4px;">Loading teams…</div>
+  <div style="min-width: 420px; padding: 16px 4px;">Cargando equipos…</div>
 </ng-template>
 
 <div mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Cancel</button>
-  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || form.value.homeTeamId===form.value.awayTeamId">
-    Create
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="save()" [disabled]="form.invalid || form.value.equipoLocalId===form.value.equipoVisitanteId">
+    Crear
   </button>
 </div>

@@ -42,13 +42,13 @@ export class ScoreboardComponent {
   }
 
   async ngOnInit() {
-    this.api.getMatch(this.matchId()).subscribe({
+    this.api.obtenerPartido(this.matchId()).subscribe({
       next: (m: any) => {
-        this.realtime.score.set({ home: m.homeScore, away: m.awayScore });
-        this.homeName = m.homeTeam || 'A TEAM';
-        this.awayName = m.awayTeam || 'B TEAM';
+        this.realtime.score.set({ home: m.puntajeLocal, away: m.puntajeVisitante });
+        this.homeName = m.equipoLocal || 'A TEAM';
+        this.awayName = m.equipoVisitante || 'B TEAM';
         this.realtime.hydrateTimerFromSnapshot(m.timer);
-        if (m?.fouls) this.realtime.hydrateFoulsFromSnapshot(m.fouls); // 👈 NUEVO
+        this.realtime.hydrateFoulsFromSnapshot({ home: m.faltasLocal, away: m.faltasVisitante });
       }
     });
     if (isPlatformBrowser(this.platformId)) {
