@@ -183,8 +183,8 @@ Ejemplo:
 - **ScoreEvents** → registro de eventos (puntos, faltas, etc.)  
 
 ### Notas importantes
-- 📌 Migraciones se gestionan con `dotnet ef migrations`  
-- 📌 Volumen persistente configurado en `docker-compose.yml`  
+-  Migraciones se gestionan con `dotnet ef migrations`  
+- Volumen persistente configurado en `docker-compose.yml`  
 
 ##  Lógica de Negocio
 
@@ -209,4 +209,5 @@ Ejemplo:
 - Todo está orquestado con Docker Compose (contenedor para la API y contenedor para la base de datos).  
 
 ---
+
 
