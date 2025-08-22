@@ -1,4 +1,4 @@
-import { Component, computed, inject, PLATFORM_ID } from '@angular/core';
+import { Component, computed, effect, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,6 +8,7 @@ import { TeamPanelComponent } from '../../../shared/team-panel/team-panel';
 import { TimerComponent } from '../../../shared/timer/timer';
 import { QuarterIndicatorComponent } from '../../../shared/quarter-indicator/quarter-indicator';
 import { FoulsPanelComponent } from '../../../shared/fouls-panel/fouls-panel';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-scoreboard',
@@ -26,6 +27,19 @@ export class ScoreboardComponent {
 
   homeName = 'A TEAM';
   awayName = 'B TEAM';
+
+  constructor() {
+    effect(() => {
+      const over = this.realtime.gameOver();
+      if (!over || !isPlatformBrowser(this.platformId)) return;
+      const text = over.winner === 'draw'
+        ? `Empate ${over.home} - ${over.away}`
+        : over.winner === 'home'
+          ? `¡Ganó ${this.homeName}! ${over.home} - ${over.away}`
+          : `¡Ganó ${this.awayName}! ${over.away} - ${over.home}`;
+      Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
+    });
+  }
 
   async ngOnInit() {
     this.api.getMatch(this.matchId()).subscribe({

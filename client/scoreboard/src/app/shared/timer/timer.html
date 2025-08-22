@@ -1,1 +1,1 @@
-<div class="timer led led-green">{{ display() }}</div>
+<div class="timer led" [ngClass]="rt.timeoutRunning() ? 'led-yellow' : 'led-green'">{{ display() }}</div>

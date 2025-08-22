@@ -173,8 +173,18 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         var m = await db.Matches.FindAsync(id);
         if (m is null) return NotFound();
 
-        if (dto.TeamId == m.HomeTeamId) m.HomeScore += dto.Delta;
-        else if (dto.TeamId == m.AwayTeamId) m.AwayScore += dto.Delta;
+        if (dto.TeamId == m.HomeTeamId)
+        {
+            if (m.HomeScore + dto.Delta < 0)
+                return BadRequest("Score cannot be negative");
+            m.HomeScore += dto.Delta;
+        }
+        else if (dto.TeamId == m.AwayTeamId)
+        {
+            if (m.AwayScore + dto.Delta < 0)
+                return BadRequest("Score cannot be negative");
+            m.AwayScore += dto.Delta;
+        }
         else return BadRequest("Invalid teamId for this match");
 
         db.ScoreEvents.Add(new ScoreEventEntity { MatchId = id, TeamId = dto.TeamId, Points = dto.Delta, DateRegister = DateTime.Now });
@@ -403,6 +413,39 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
         }
 
         return Ok(new { quarter = m.Period });
+    }
+
+    // ===========================
+    // CANCELAR O SUSPENDER PARTIDO
+    // ===========================
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var m = await db.Matches.FindAsync(id);
+        if (m is null) return NotFound();
+
+        m.Status = "Canceled";
+        await db.SaveChangesAsync();
+
+        await hub.Clients.Group($"match-{id}")
+            .SendAsync("gameCanceled", new { status = m.Status });
+
+        return Ok(new { status = m.Status });
+    }
+
+    [HttpPost("{id}/suspend")]
+    public async Task<IActionResult> Suspend(int id)
+    {
+        var m = await db.Matches.FindAsync(id);
+        if (m is null) return NotFound();
+
+        m.Status = "Suspended";
+        await db.SaveChangesAsync();
+
+        await hub.Clients.Group($"match-{id}")
+            .SendAsync("gameSuspended", new { status = m.Status });
+
+        return Ok(new { status = m.Status });
     }
 
     // ===========================

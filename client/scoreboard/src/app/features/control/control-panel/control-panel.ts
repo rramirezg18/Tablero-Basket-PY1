@@ -59,7 +59,7 @@ export class ControlPanelComponent implements OnDestroy {
 
   // Reloj mm:ss desde timeLeft()
   clock = computed(() => {
-    const tl = this.rt.timeLeft();
+    const tl = this.rt.timeoutRunning() ? this.rt.timeoutLeft() : this.rt.timeLeft();
     const m = Math.floor(tl / 60), s = tl % 60;
     return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
   });
@@ -228,7 +228,9 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   timeout(sec: number) {
-    this.api.startTimer(this.matchId(), { quarterDurationSeconds: sec }).subscribe();
+    if (this.rt.timeoutRunning()) return;
+    this.stop();
+    this.rt.startTimeout(sec, () => this.resume());
   }
 
   // === Periodo (real)

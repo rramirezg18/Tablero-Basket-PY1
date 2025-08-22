@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "grep -q 'SQL Server is now ready for client connections' /var/opt/mssql/log/errorlog"]
+      interval: 5s
+      timeout: 3s
+      retries: 60
+      start_period: 40s
+
+  db-init:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+    volumes:
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./sql/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    entrypoint: ["/bin/bash", "/docker-entrypoint-initdb.d/init-db.sh"]
+
+  api:
+    build:
+      context: ./server/Scoreboard.Api
+    environment:
+      ASPNETCORE_URLS: "http://+:8080"
+      ConnectionStrings__DefaultConnection: "Server=db;Database=MarcadorDb;User Id=marcador_app;Password=MarcadorAppPy1;Encrypt=true;TrustServerCertificate=true;MultipleActiveResultSets=true"
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    ports:
+      - "8080:8080"
+
+  web:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "4200:80"
+
+volumes:
+  mssqldata:

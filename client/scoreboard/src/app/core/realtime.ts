@@ -15,6 +15,10 @@ export class RealtimeService {
   timerRunning = signal(false);
   quarter = signal(1);
 
+  // Tiempo de timeout
+  timeoutLeft = signal(0);
+  timeoutRunning = signal(false);
+
   // 👇 NUEVO: faltas
   fouls = signal<{ home: number; away: number }>({ home: 0, away: 0 });
 
@@ -22,6 +26,8 @@ export class RealtimeService {
 
   // ===== reloj interno =====
   private endsAt?: number;
+  private timeoutEndsAt?: number;
+  private timeoutTick?: any;
 
   // ===== audio =====
   private audioCtx?: AudioContext;
@@ -52,14 +58,45 @@ export class RealtimeService {
         this.timerRunning.set(false);
         this.stopTick();
         this.endsAt = undefined;
+        if (this.quarter() === 4) {
+          const { home, away } = this.score();
+          const winner = home === away ? 'draw' : home > away ? 'home' : 'away';
+          this.gameOver.set({ home, away, winner });
+        }
       }
     }, 200);
   }
   private stopTick() { if (this.tick) { clearInterval(this.tick); this.tick = undefined; } }
 
+  // ==== Timeout local ====
+  startTimeout(seconds: number, onDone?: () => void) {
+    this.stopTimeout();
+    if (seconds <= 0) return;
+    this.timeoutLeft.set(seconds);
+    this.timeoutRunning.set(true);
+    this.timeoutEndsAt = Date.now() + seconds * 1000;
+    this.timeoutTick = setInterval(() => {
+      const s = Math.max(0, Math.floor((this.timeoutEndsAt! - Date.now()) / 1000));
+      this.timeoutLeft.set(s);
+      if (s === 0) {
+        this.stopTimeout();
+        onDone?.();
+      }
+    }, 200);
+  }
+
+  private stopTimeout() {
+    if (this.timeoutTick) { clearInterval(this.timeoutTick); this.timeoutTick = undefined; }
+    this.timeoutEndsAt = undefined;
+    this.timeoutLeft.set(0);
+    this.timeoutRunning.set(false);
+  }
+
   // ===== hidratar desde GET /matches/:id =====
   hydrateTimerFromSnapshot(snap?: { running: boolean; remainingSeconds: number; quarterEndsAtUtc?: string | null; quarter?: number; }) {
     if (!snap) return;
+    this.stopTimeout();
+    this.gameOver.set(null);
     if (typeof snap.quarter === 'number') this.quarter.set(snap.quarter);
 
     const secs = snap.remainingSeconds ?? 0;
@@ -98,6 +135,7 @@ export class RealtimeService {
 
     // Timer
     this.hub.on('timerStarted', (t: { quarterEndsAtUtc: string; remainingSeconds: number }) => {
+      this.stopTimeout();
       this.timeLeft.set(t.remainingSeconds);
       this.timerRunning.set(true);
       this.endsAt = Date.now() + t.remainingSeconds * 1000;
@@ -110,12 +148,14 @@ export class RealtimeService {
       this.endsAt = undefined;
     });
     this.hub.on('timerResumed', (t: { quarterEndsAtUtc: string; remainingSeconds: number }) => {
+      this.stopTimeout();
       this.timeLeft.set(t.remainingSeconds);
       this.timerRunning.set(true);
       this.endsAt = Date.now() + t.remainingSeconds * 1000;
       this.startTick();
     });
     this.hub.on('timerReset', (t: { remainingSeconds: number }) => {
+      this.stopTimeout();
       this.timeLeft.set(t.remainingSeconds);
       this.timerRunning.set(false);
       this.stopTick();
@@ -145,6 +185,7 @@ export class RealtimeService {
 
   async disconnect() {
     this.stopTick();
+    this.stopTimeout();
     if (this.hub) { await this.hub.stop(); this.hub = undefined; }
   }
 }
