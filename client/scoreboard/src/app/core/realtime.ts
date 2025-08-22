@@ -129,8 +129,8 @@ export class RealtimeService {
       .build();
 
     // Score
-    this.hub.on('scoreUpdated', (s: { homeScore: number; awayScore: number }) => {
-      this.score.set({ home: s.homeScore, away: s.awayScore });
+    this.hub.on('scoreUpdated', (p: { puntajeLocal: number; puntajeVisitante: number }) => {
+      this.score.set({ home: p.puntajeLocal, away: p.puntajeVisitante });
     });
 
     // Timer
@@ -168,8 +168,8 @@ export class RealtimeService {
     });
 
     // 👇 NUEVO: faltas en tiempo real
-    this.hub.on('foulsUpdated', (p: { homeFouls: number; awayFouls: number }) => {
-      this.fouls.set({ home: p.homeFouls, away: p.awayFouls });
+    this.hub.on('foulsUpdated', (p: { faltasLocal: number; faltasVisitante: number }) => {
+      this.fouls.set({ home: p.faltasLocal, away: p.faltasVisitante });
     });
 
     // Buzzer
@@ -189,3 +189,4 @@ export class RealtimeService {
     if (this.hub) { await this.hub.stop(); this.hub = undefined; }
   }
 }
+

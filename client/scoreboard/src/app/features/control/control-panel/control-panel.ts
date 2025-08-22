@@ -179,19 +179,19 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   // === Puntos
-  add(teamId: number | undefined, points: 1 | 2 | 3) {
-    if (!teamId || !this.canScore()) return;
-    this.api.crearPuntaje(this.matchId(), { teamId, points }).subscribe();
+  add(equipoId: number | undefined, puntos: 1 | 2 | 3) {
+    if (!equipoId || !this.canScore()) return;
+    this.api.crearPuntaje(this.matchId(), { equipoId, puntos }).subscribe();
   }
-  minus1(teamId: number | undefined) {
-    if (!teamId || !this.canScore()) return;
-    this.api.ajustarPuntaje(this.matchId(), { teamId, delta: -1 }).subscribe();
+  minus1(equipoId: number | undefined) {
+    if (!equipoId || !this.canScore()) return;
+    this.api.ajustarPuntaje(this.matchId(), { equipoId, delta: -1 }).subscribe();
   }
 
   // === Faltas
-  foul(teamId: number | undefined, delta: 1 | -1) {
-    if (!teamId) return;
-    this.api.ajustarFalta(this.matchId(), { teamId, delta }).subscribe();
+  foul(equipoId: number | undefined, delta: 1 | -1) {
+    if (!equipoId) return;
+    this.api.ajustarFalta(this.matchId(), { equipoId, delta }).subscribe();
   }
 
   // === Timer
@@ -260,7 +260,7 @@ export class ControlPanelComponent implements OnDestroy {
     });
     ref.afterClosed().subscribe(result => {
       if (!result) return;
-      this.api.createTeam(result).subscribe({
+      this.api.crearEquipo(result).subscribe({
         next: async (res: any) => {
           await Swal.fire({
             icon: 'success',
@@ -268,7 +268,7 @@ export class ControlPanelComponent implements OnDestroy {
             timer: 1200, showConfirmButton: false, position: 'top'
           });
         },
-        error: async (e) => {
+        error: async (e: any) => {
           await Swal.fire({ icon: 'error', title: 'Error creating team', text: e?.error ?? e?.message ?? 'Unknown error' });
         }
       });
@@ -312,14 +312,14 @@ export class ControlPanelComponent implements OnDestroy {
   }
 
   showStandings() {
-    this.api.getStandings().subscribe({
-      next: (rows) => {
+    this.api.obtenerPosiciones().subscribe({
+      next: (rows: any) => {
         this.dialog.open(StandingsDialogComponent, {
           width: '520px',
           data: { rows }
         });
       },
-      error: (e) => {
+      error: (e: any) => {
         console.error('getStandings error', e);
         // Si usas SweetAlert:
         // Swal.fire({ icon: 'error', title: 'Error cargando standings', text: e?.error ?? e?.message ?? 'Unknown error' });

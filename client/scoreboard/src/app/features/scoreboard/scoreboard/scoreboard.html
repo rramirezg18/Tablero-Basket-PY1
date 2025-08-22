@@ -17,7 +17,7 @@
   <!-- MIDDLE: SCORE - POS/PERIOD - SCORE -->
   <div class="middle">
     <div class="score-box left">
-      <app-team-panel [label]="homeName" [score]="realtime.score().home"></app-team-panel>
+      <app-team-panel [label]="nombreLocal" [score]="realtime.score().home"></app-team-panel>
     </div>
 
     <div class="center">
@@ -30,7 +30,8 @@
     </div>
 
     <div class="score-box right">
-      <app-team-panel [label]="awayName" [score]="realtime.score().away"></app-team-panel>
+      <app-team-panel [label]="nombreVisitante" [score]="realtime.score().away"></app-team-panel>
     </div>
   </div>
 </div>
+

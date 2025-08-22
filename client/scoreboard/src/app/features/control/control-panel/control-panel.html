@@ -4,8 +4,8 @@
     <button class="btn ghost">Help</button>
     <button class="btn ghost">Options</button>
     <button class="btn" (click)="registerTeam()">Register Team</button>
-    <button class="btn" (click)="newGameFromRegistered()">New Game (Teams)</button>
-    <button class="btn ghost" (click)="newGame()">New Game (manual)</button>
+    <button class="btn" (click)="nuevoPartidoDesdeRegistrados()">New Game (Teams)</button>
+    <button class="btn ghost" (click)="nuevoPartido()">New Game (manual)</button>
     <button class="btn" (click)="showStandings()">Standings</button>
 
     <button class="btn">Correction</button>
@@ -45,7 +45,7 @@
     <div class="pos">
       <button class="btn pos-btn" [class.active]="possession() === 'home'" (click)="posLeft()">◄</button>
       <button class="btn pos-none" (click)="posNone()">
-        {{ possession() === 'none' ? 'None' : (possession() === 'home' ? homeName : awayName) }}
+        {{ possession() === 'none' ? 'None' : (possession() === 'home' ? nombreLocal : nombreVisitante) }}
       </button>
       <button class="btn pos-btn" [class.active]="possession() === 'away'" (click)="posRight()">►</button>
     </div>
@@ -74,49 +74,49 @@
   <div class="teams">
     <!-- HOME -->
     <div class="team">
-      <div class="name">{{ homeName }}</div>
+      <div class="name">{{ nombreLocal }}</div>
       <div class="sub">SCORE</div>
 
       <div class="score-row">
-        <button class="btn neg" [disabled]="!homeTeamId || !canScore()" (click)="minus1(homeTeamId)">-1</button>
-        <div class="score-display">{{ homeScore() }}</div>
-        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,1)">+1</button>
+        <button class="btn neg" [disabled]="!equipoLocalId || !canScore()" (click)="minus1(equipoLocalId)">-1</button>
+        <div class="score-display">{{ puntajeLocal() }}</div>
+        <button class="btn pos" [disabled]="!equipoLocalId || !canScore()" (click)="add(equipoLocalId,1)">+1</button>
       </div>
       <div class="score-actions">
-        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,3)">+3</button>
-        <button class="btn pos" [disabled]="!homeTeamId || !canScore()" (click)="add(homeTeamId,2)">+2</button>
+        <button class="btn pos" [disabled]="!equipoLocalId || !canScore()" (click)="add(equipoLocalId,3)">+3</button>
+        <button class="btn pos" [disabled]="!equipoLocalId || !canScore()" (click)="add(equipoLocalId,2)">+2</button>
       </div>
 
       <!-- FOULS HOME (horizontal) -->
       <div class="sub fouls-title">FOULS</div>
       <div class="fouls-row">
-        <button class="btn neg" [disabled]="!homeTeamId" (click)="foul(homeTeamId,-1)">-1</button>
-        <div class="fouls-display">{{ homeFouls() }}</div>
-        <button class="btn pos" [disabled]="!homeTeamId" (click)="foul(homeTeamId,1)">+1</button>
+        <button class="btn neg" [disabled]="!equipoLocalId" (click)="foul(equipoLocalId,-1)">-1</button>
+        <div class="fouls-display">{{ faltasLocal() }}</div>
+        <button class="btn pos" [disabled]="!equipoLocalId" (click)="foul(equipoLocalId,1)">+1</button>
       </div>
     </div>
 
     <!-- AWAY -->
     <div class="team">
-      <div class="name">{{ awayName }}</div>
+      <div class="name">{{ nombreVisitante }}</div>
       <div class="sub">SCORE</div>
 
       <div class="score-row">
-        <button class="btn neg" [disabled]="!awayTeamId || !canScore()" (click)="minus1(awayTeamId)">-1</button>
-        <div class="score-display">{{ awayScore() }}</div>
-        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,1)">+1</button>
+        <button class="btn neg" [disabled]="!equipoVisitanteId || !canScore()" (click)="minus1(equipoVisitanteId)">-1</button>
+        <div class="score-display">{{ puntajeVisitante() }}</div>
+        <button class="btn pos" [disabled]="!equipoVisitanteId || !canScore()" (click)="add(equipoVisitanteId,1)">+1</button>
       </div>
       <div class="score-actions">
-        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,3)">+3</button>
-        <button class="btn pos" [disabled]="!awayTeamId || !canScore()" (click)="add(awayTeamId,2)">+2</button>
+        <button class="btn pos" [disabled]="!equipoVisitanteId || !canScore()" (click)="add(equipoVisitanteId,3)">+3</button>
+        <button class="btn pos" [disabled]="!equipoVisitanteId || !canScore()" (click)="add(equipoVisitanteId,2)">+2</button>
       </div>
 
       <!-- FOULS AWAY (horizontal) -->
       <div class="sub fouls-title">FOULS</div>
       <div class="fouls-row">
-        <button class="btn neg" [disabled]="!awayTeamId" (click)="foul(awayTeamId,-1)">-1</button>
-        <div class="fouls-display">{{ awayFouls() }}</div>
-        <button class="btn pos" [disabled]="!awayTeamId" (click)="foul(awayTeamId,1)">+1</button>
+        <button class="btn neg" [disabled]="!equipoVisitanteId" (click)="foul(equipoVisitanteId,-1)">-1</button>
+        <div class="fouls-display">{{ faltasVisitante() }}</div>
+        <button class="btn pos" [disabled]="!equipoVisitanteId" (click)="foul(equipoVisitanteId,1)">+1</button>
       </div>
     </div>
   </div>
