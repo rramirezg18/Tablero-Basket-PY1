@@ -1,9 +1,9 @@
 <div align="center">
-<h1><strong>PROYECTO 1 - DESARROLLO WEB/strong></h1>
+<h1><strong>PROYECTO 1 - DESARROLLO WEB</h1>
 </div>
 
 <div align="center">
-<h1><strong>MARCADOR DE BALONCESTO/strong></h1>
+<h1><strong>MARCADOR DE BALONCESTO</h1>
 </div>
 ---
 
