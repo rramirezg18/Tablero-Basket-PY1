@@ -1,16 +1,21 @@
 <div class="cp">
   <!-- Toolbar superior -->
   <div class="toolbar">
-    <button class="btn ghost">Help</button>
-    <button class="btn ghost">Options</button>
+    <!--<button class="btn ghost">Help</button>-->
+   <!-- <button class="btn ghost">Options</button>-->
     <button class="btn" (click)="registerTeam()">Register Team</button>
+<<<<<<< HEAD
     <button class="btn" (click)="nuevoPartidoDesdeRegistrados()">New Game (Teams)</button>
     <button class="btn ghost" (click)="nuevoPartido()">New Game (manual)</button>
+=======
+    <button class="btn" (click)="newGameFromRegistered()">New Game (Teams)</button>
+    <!--<button class="btn ghost" (click)="newGame()">New Game (manual)</button>-->
+>>>>>>> cddaef2db82a7e933e0e2083394173bf130b7944
     <button class="btn" (click)="showStandings()">Standings</button>
 
-    <button class="btn">Correction</button>
+    <!--<button class="btn">Correction</button> -->
     <button class="btn" (click)="rt.beep()">Buzzer</button>
-    <button class="btn ghost">Exit</button>
+    <!--<button class="btn ghost">Exit</button>-->
   </div>
 
   <!-- Centro: controles de tiempo -->
@@ -35,7 +40,7 @@
       <button class="btn" (click)="timeout(30)" [disabled]="rt.timeoutRunning() || !rt.timerRunning()">Timeout (0:30)</button>
       <button class="btn" (click)="timeout(60)" [disabled]="rt.timeoutRunning() || !rt.timerRunning()">Timeout (1:00)</button>
       <button class="btn" (click)="reset()">Reset</button>
-      <button class="btn ghost">Show Time of Day</button>
+     <!--<button class="btn ghost">Show Time of Day</button>-->
     </div>
   </div>
 

@@ -147,6 +147,7 @@ export class ControlPanelComponent implements OnDestroy {
   private tryAutoAdvance(retry = 0) {
     const id = this.matchId();
     const prevQuarter = this.rt.quarter();
+<<<<<<< HEAD
     this.api.autoAdvanceQuarter(id).subscribe({
       next: (res: any) => {
         // Si el backend avanzó de periodo, res.quarter será el nuevo.
@@ -154,6 +155,21 @@ export class ControlPanelComponent implements OnDestroy {
         const q = res?.quarter ?? prevQuarter;
         const ended = q > prevQuarter ? q - 1 : q;
         this.showQuarterEndAlert(ended); // buzzer llega por SignalR
+=======
+
+    this.api.autoAdvanceQuarter(id).subscribe({
+      next: (res: any) => {
+        const q = res?.quarter ?? prevQuarter;
+
+        // Si el backend avanzó, terminó el anterior
+        const ended = q > prevQuarter ? q - 1 : q;
+
+        // ⚡ Sólo mostrar alerta de fin de cuarto si es < 4
+        if (ended < 4) {
+          this.showQuarterEndAlert(ended);
+        }
+        // 🚨 Si es el 4, no hacemos nada aquí: el effect de gameOver se encargará
+>>>>>>> cddaef2db82a7e933e0e2083394173bf130b7944
       },
       error: (e) => {
         if (retry < 8) {
@@ -305,11 +321,31 @@ export class ControlPanelComponent implements OnDestroy {
 
   private async showGameEndAlert(home: number, away: number, winner: 'home'|'away'|'draw') {
     if (!isPlatformBrowser(this.platformId)) return;
+
     let text = winner === 'draw' ? `Empate ${home} - ${away}` :
+<<<<<<< HEAD
                winner === 'home' ? `¡Ganó ${this.nombreLocal}! ${home} - ${away}` :
                                    `¡Ganó ${this.nombreVisitante}! ${away} - ${home}`;
     await Swal.fire({ title: 'Fin del partido', text, icon: 'warning', position: 'top', showConfirmButton: true });
+=======
+              winner === 'home' ? `¡Ganó ${this.homeName}! ${home} - ${away}` :
+                                  `¡Ganó ${this.awayName}! ${away} - ${home}`;
+
+    await Swal.fire({
+      title: 'Fin del partido',
+      text,
+      icon: 'success',            // 🔔 puedes dejar "warning" si prefieres
+      position: 'top',
+      timer: 3000,                // ⏱️ 3 segundos
+      timerProgressBar: true,     // 🔄 muestra barra de progreso
+      showConfirmButton: false,   // ❌ sin botón "OK"
+      backdrop: true,
+      background: '#ffffff',
+      color: '#111'
+    });
+>>>>>>> cddaef2db82a7e933e0e2083394173bf130b7944
   }
+
 
   showStandings() {
     this.api.obtenerPosiciones().subscribe({
