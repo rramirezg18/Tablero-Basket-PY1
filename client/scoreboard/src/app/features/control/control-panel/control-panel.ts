@@ -322,8 +322,8 @@ export class ControlPanelComponent implements OnDestroy {
       icon: 'success',            // 🔔 puedes dejar "warning" si prefieres
       position: 'top',
       timer: 3000,                // ⏱️ 3 segundos
-      timerProgressBar: true,     // 🔄 muestra barra de progreso
-      showConfirmButton: false,   // ❌ sin botón "OK"
+      timerProgressBar: true,     
+      showConfirmButton: false,   
       backdrop: true,
       background: '#ffffff',
       color: '#111'

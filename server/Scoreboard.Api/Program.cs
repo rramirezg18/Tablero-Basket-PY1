@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scoreboard.Api.Infrastructure;
 using Scoreboard.Api.Hubs;
 
-// ⬇️ Alias explícitos a Models.Entities
+// Alias explícitos a Models.Entities
 using TeamEntity  = Scoreboard.Api.Models.Entities.Team;
 using MatchEntity = Scoreboard.Api.Models.Entities.Match;
 
@@ -13,14 +13,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2) EF Core (SQL Server)
+// 2) EF Core
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // 3) SignalR
 builder.Services.AddSignalR();
 
-// 4) CORS (Angular dev server)
+// 4) CORS Angular dev server
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
@@ -32,7 +32,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 5) Runtime del reloj en memoria
+ // Runtime del reloj en memoria
 builder.Services.AddSingleton<IMatchRunTimeStore, MatchRunTimeStore>();
 
 var app = builder.Build();
@@ -51,7 +51,7 @@ app.MapControllers();
 app.MapHub<ScoreHub>("/hubs/score");
 app.MapFallbackToFile("/index.html");
 
-// ===== Migraciones + seed mínimo =====
+// Migraciones
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -64,7 +64,7 @@ using (var scope = app.Services.CreateScope())
         db.AddRange(home, away);
         await db.SaveChangesAsync();
 
-        // 👇 Usamos Set<MatchEntity>() para evitar cualquier choque de tipos
+  
         db.Set<MatchEntity>().Add(new MatchEntity
         {
             HomeTeamId = home.Id,
