@@ -5,7 +5,7 @@
 <div align="center">
 <h1><strong>MARCADOR DE BALONCESTO</h1>
 </div>
----
+
 
 # **Proyecto desarrollado por:**
 
