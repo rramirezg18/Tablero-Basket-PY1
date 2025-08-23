@@ -2,6 +2,11 @@
 
 ---
 
+# Diagrama de Entidad Relación
+![Imagen](DiagramaEntidadRelacion.png)
+
+
+
 Base de datos para gestión de partidos entre equipos, jugadores, eventos de puntuación y faltas. Tablas principales:
 
 - `Teams` — equipos.  
