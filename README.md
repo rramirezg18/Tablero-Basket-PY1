@@ -42,13 +42,13 @@ Esta aplicación nos permite controlar el marcador de partidos de baloncesto en 
 [**Documentación Base de Datos**](https://github.com/rramirezg18/Tablero-Basket-PY1/blob/main/DocumentacionBD.md "Base de Datos")
 
 ## **Enlaces para prueba de la aplicación:**
-[**http://157.245.175.164/control**](http://157.245.175.164/control/2 "control")
-
+[**http://157.245.175.164/control**](http://157.245.175.164/control "control")
+![Imagen](control.png)
 
 
 
 [**http://157.245.175.164/score**](http://157.245.175.164/score "score")
-
+![Imagen](score.png)
 
 
 
