@@ -56,7 +56,7 @@ public class TeamsController(AppDbContext db) : ControllerBase
         });
     }
 
-    // DTOs locales para crear equipo con jugadores (pueden quedarse aquí)
+    // DTOs locales para crear equipo con jugadores 
     public record PlayerItemDto(int? Number, string Name);
     public record CreateTeamDto(string Name, string? Color, List<PlayerItemDto>? Players);
 
