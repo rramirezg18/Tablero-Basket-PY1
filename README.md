@@ -22,17 +22,17 @@
 Esta aplicación nos permite controlar el marcador de partidos de baloncesto en tiempo real a travez de un tablero de control. 
 
 ## **La aplicación fue desarrollada con las siguientes tecnologías:**
-* [x]Frontend: Angular
-* [x]Backend: Dotnet
-* [x]Base de Datos: sql server 2022
+* [x] Frontend: Angular
+* [x] Backend: Dotnet
+* [x] Base de Datos: sql server 2022
 
 ## **Se utilizarón herramientas como:**
-* [x]Entity Framework: Para migración de datos. 
-* [x]Signal IR: Para visualizar todos los cambios en tiempo real,.
-* [x]Sweet Alert: Para la generación de alertas interactivas. 
-* [x]Docker: Como contenedores de la aplicación.
-* [x]Proxy Reverse: Para redireccionamiento de puertos.
-* [x]VPS: Servidor donde se ejecuta la aplicación.
+* [x] Entity Framework: Para migración de datos. 
+* [x] Signal IR: Para visualizar todos los cambios en tiempo real,.
+* [x] Sweet Alert: Para la generación de alertas interactivas. 
+* [x] Docker: Como contenedores de la aplicación.
+* [x] Proxy Reverse: Para redireccionamiento de puertos.
+* [x] VPS: Servidor donde se ejecuta la aplicación.
 
 ## **Enlaces para ver la documentación de la aplicación:**
 [**Documentación Frontend**](https://github.com/rramirezg18/Tablero-Basket-PY1/blob/main/documentacion%20del%20FRONTED.md "Backend")
