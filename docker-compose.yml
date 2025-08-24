@@ -29,7 +29,7 @@ services:
 
   api:
     build:
-      context: ./server/Scoreboard.Api
+      context: ./back/Scoreboard
     environment:
       ASPNETCORE_URLS: "http://+:8080"
       ConnectionStrings__DefaultConnection: "Server=db;Database=MarcadorDb;User Id=marcador_app;Password=MarcadorAppPy1;Encrypt=true;TrustServerCertificate=true;MultipleActiveResultSets=true"
@@ -43,7 +43,7 @@ services:
 
   web:
     build:
-      context: ./client
+      context: ./front
       dockerfile: Dockerfile
     depends_on:
       api:
