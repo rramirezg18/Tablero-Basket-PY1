@@ -1,7 +1,7 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
-COPY Scoreboard.Api.csproj ./
+COPY Scoreboard.csproj ./
 RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release -o /app
@@ -12,4 +12,5 @@ WORKDIR /app
 COPY --from=build /app ./
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Scoreboard.Api.dll"]
+ENTRYPOINT ["dotnet", "Scoreboard.dll"]
+#aaaaaaaaaaaaaaaaaaaaaa
