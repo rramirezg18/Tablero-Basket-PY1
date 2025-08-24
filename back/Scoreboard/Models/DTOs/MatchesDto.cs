@@ -1,4 +1,4 @@
-//
+//name
 namespace Scoreboard.Models.DTOs;
 
 public record NewGameDto(string HomeName, string AwayName, int? QuarterDurationSeconds);
