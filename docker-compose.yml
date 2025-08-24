@@ -3,7 +3,7 @@ services:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_SA_PASSWORD: "Guate!2025Siman"
     ports:
       - "1433:1433"
     volumes:
@@ -21,7 +21,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      MSSQL_SA_PASSWORD: "YourStrong!Passw0rd"
+      MSSQL_SA_PASSWORD: "Guate!2025Siman"
     volumes:
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
       - ./sql/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
