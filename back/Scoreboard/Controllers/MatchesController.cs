@@ -30,7 +30,7 @@ public class MatchesController(AppDbContext db, IHubContext<ScoreHub> hub, IMatc
 
         if (m is null) return NotFound();
 
-        // Snapshot del runtime (no BD)
+    
         var snap = rt.GetOrCreate(id, m.QuarterDurationSeconds);
 
         // Conteo de faltas por equipo 
