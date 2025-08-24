@@ -1,6 +1,9 @@
+//controla el tiempo
+
+
 using System.Collections.Concurrent;
 
-namespace Scoreboard.Api.Infrastructure;
+namespace Scoreboard.Infrastructure;
 
 public record TimerSnapshot(bool IsRunning, int RemainingSeconds, DateTime? EndsAt);
 
