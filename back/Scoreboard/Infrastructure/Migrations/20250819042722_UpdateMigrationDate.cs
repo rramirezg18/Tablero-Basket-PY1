@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Scoreboard.Api.Infrastructure.Migrations
+namespace Scoreboard.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class UpdateMigrationDate : Migration

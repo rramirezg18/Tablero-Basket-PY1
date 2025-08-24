@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using Scoreboard.Api.Infrastructure;
-using Scoreboard.Api.Hubs;
+using Scoreboard.Infrastructure;
+using Scoreboard.Hubs;
 
 // Alias explícitos a Models.Entities
-using TeamEntity  = Scoreboard.Api.Models.Entities.Team;
-using MatchEntity = Scoreboard.Api.Models.Entities.Match;
+using TeamEntity  = Scoreboard.Models.Entities.Team;
+using MatchEntity = Scoreboard.Models.Entities.Match;
 
 var builder = WebApplication.CreateBuilder(args);
 

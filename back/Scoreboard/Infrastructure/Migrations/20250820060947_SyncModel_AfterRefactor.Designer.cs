@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Scoreboard.Api.Infrastructure;
+using Scoreboard.Infrastructure;
 
 #nullable disable
 
-namespace Scoreboard.Api.Infrastructure.Migrations
+namespace Scoreboard.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20250820060947_SyncModel_AfterRefactor")]
@@ -25,7 +25,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Foul", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Foul", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -59,7 +59,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("Fouls");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Match", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Match", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +104,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("Matches");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Player", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Player", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -134,7 +134,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.ScoreEvent", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.ScoreEvent", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -173,7 +173,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("ScoreEvents");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Team", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Team", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -199,7 +199,7 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("Teams");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.TeamWin", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.TeamWin", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -228,20 +228,20 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.ToTable("TeamWins");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Foul", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Foul", b =>
                 {
-                    b.HasOne("Scoreboard.Api.Models.Entities.Match", "Match")
+                    b.HasOne("Scoreboard.Models.Entities.Match", "Match")
                         .WithMany()
                         .HasForeignKey("MatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Player", "Player")
+                    b.HasOne("Scoreboard.Models.Entities.Player", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "Team")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -254,15 +254,15 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Match", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Match", b =>
                 {
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "AwayTeam")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "AwayTeam")
                         .WithMany()
                         .HasForeignKey("AwayTeamId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "HomeTeam")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "HomeTeam")
                         .WithMany()
                         .HasForeignKey("HomeTeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -273,9 +273,9 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("HomeTeam");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Player", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Player", b =>
                 {
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "Team")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "Team")
                         .WithMany("Players")
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -284,20 +284,20 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.ScoreEvent", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.ScoreEvent", b =>
                 {
-                    b.HasOne("Scoreboard.Api.Models.Entities.Match", "Match")
+                    b.HasOne("Scoreboard.Models.Entities.Match", "Match")
                         .WithMany("ScoreEvents")
                         .HasForeignKey("MatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Player", "Player")
+                    b.HasOne("Scoreboard.Models.Entities.Player", "Player")
                         .WithMany()
                         .HasForeignKey("PlayerId")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "Team")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -310,15 +310,15 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.TeamWin", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.TeamWin", b =>
                 {
-                    b.HasOne("Scoreboard.Api.Models.Entities.Match", "Match")
+                    b.HasOne("Scoreboard.Models.Entities.Match", "Match")
                         .WithMany()
                         .HasForeignKey("MatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Scoreboard.Api.Models.Entities.Team", "Team")
+                    b.HasOne("Scoreboard.Models.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -329,12 +329,12 @@ namespace Scoreboard.Api.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Match", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Match", b =>
                 {
                     b.Navigation("ScoreEvents");
                 });
 
-            modelBuilder.Entity("Scoreboard.Api.Models.Entities.Team", b =>
+            modelBuilder.Entity("Scoreboard.Models.Entities.Team", b =>
                 {
                     b.Navigation("Players");
                 });

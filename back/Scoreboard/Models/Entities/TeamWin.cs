@@ -1,4 +1,4 @@
-namespace Scoreboard.Api.Models.Entities;
+namespace Scoreboard.Models.Entities;
 
 public class TeamWin
 {
